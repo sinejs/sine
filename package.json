@@ -1,0 +1,26 @@
+{
+  "name": "blackboard",
+  "version": "0.1.0",
+  "description": "a new mvvm framework for client side",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --watch",
+    "build": "webpack --env dev --progress --profile --colors",
+    "build:dev": "webpack --env dev --progress --profile --colors",
+    "build:prod": "webpack --env prod --progress --profile --colors"
+  },
+  "keywords": [
+    "mvvm",
+    "component"
+  ],
+  "author": "gavin",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^4.39.0",
+    "webpack-cli": "^3.3.6"
+  },
+  "dependencies": {
+    "axios": "^0.19.0"
+  }
+}
