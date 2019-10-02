@@ -1,10 +1,9 @@
-import * as utils from '../utility/utils';
 import { VNodeType, VNode } from './base';
 
-utils.inherit(DocumentTypeNode, VNode);
-// document type node
-function DocumentTypeNode() {
-    DocumentTypeNode.super.call(this, VNodeType.documentType);
+class DocumentTypeNode extends VNode {
+    constructor() {
+        super(VNodeType.documentType);
+    }
 }
 
 export { DocumentTypeNode };

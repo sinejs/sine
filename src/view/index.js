@@ -1,10 +1,10 @@
 import * as utils from '../utility/utils';
 import { Messenger } from '../utility/message';
 import { typeConst, injector } from './injector';
-import Component from './component';
-import Directive from './directive';
-import Filter from './filter';
-import Service from './service';
+import { Component } from './component';
+import { Directive }from './directive';
+import { Filter } from './filter';
+import { Service } from './service';
 
 function namespace(ns) {
     return {
@@ -15,8 +15,10 @@ function namespace(ns) {
         directive: function (name, def) {
             if (utils.isFunction(def)) {
                 def = {
-                    onInsert: def,
-                    onUpdate: def
+                    methods: {
+                        onInsert: def,
+                        onUpdate: def
+                    }
                 };
             }
             def.namespace = ns;
@@ -29,7 +31,9 @@ function namespace(ns) {
         filter: function (name, def) {
             if (utils.isFunction(def)) {
                 def = {
-                    onExecute: def
+                    methods: {
+                        onExecute: def
+                    }
                 };
             }
             def.namespace = ns;
@@ -41,41 +45,45 @@ function namespace(ns) {
 function component(name, def) {
     return injector.buildConstructor(name, def, {
         contractType: typeConst.component,
-        superClass: Component
+        superClass: makeConstructor(Component)
     });
 }
 
 function directive(name, def) {
     if (utils.isFunction(def)) {
         def = {
-            onInsert: def,
-            onUpdate: def
+            methods: {
+                onInsert: def,
+                onUpdate: def
+            }
         };
     }
 
     return injector.buildConstructor(name, def, {
         contractType: typeConst.directive,
-        superClass: Directive
+        superClass: makeConstructor(Directive)
     });
 }
 
 function filter(name, def) {
     if (utils.isFunction(def)) {
         def = {
-            onExecute: def
+            methods: {
+                onExecute: def
+            }
         };
     }
 
     return injector.buildConstructor(name, def, {
         contractType: typeConst.filter,
-        superClass: Filter
+        superClass: makeConstructor(Filter)
     });
 }
 
 function service(name, def) {
     return injector.buildConstructor(name, def, {
         contractType: typeConst.service,
-        superClass: Service
+        superClass: makeConstructor(Service)
     });
 }
 
@@ -95,4 +103,30 @@ function isService(obj) {
     return obj instanceof Service;
 }
 
-export { namespace, injector, component, directive, filter, service, isComponent, isDirective, isFilter, isService };
+function bootstrap(selectorOrElement) {
+    var element, tpl;
+
+    if (utils.isString(selectorOrElement)) {
+        element = document.querySelector(selectorOrElement);
+    }
+    else {
+        element = selectorOrElement;
+    }
+
+    tpl = element.innerHTML;
+
+    new Component({
+        template: tpl
+    }).$mount(element);
+}
+
+function makeConstructor(cls) {
+    function f() {
+        cls.construct.call(this);
+    }
+
+    f.prototype = cls.prototype;
+    return f;
+}
+
+export { namespace, injector, component, directive, filter, service, isComponent, isDirective, isFilter, isService, bootstrap };

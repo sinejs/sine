@@ -1,5 +1,4 @@
 import * as utils from '../utility/utils';
-import { injector, isComponent } from '../view';
 import { Lexer } from './lexer';
 import { Parser } from './parser';
 import { HtmlLexer } from './html-lexer';
@@ -15,17 +14,6 @@ var parseOptions = {
         undefined: undefined
     }
 };
-
-function bootstrap(component, idOrElement) {
-    var element, elementId;
-
-    if (injector.containsComponent(component)) {
-        injector.createComponent(component).$mount(idOrElement);
-    }
-    else {
-        throw new Error('component' + component + 'is not defined');
-    }
-}
 
 function parse(html) {
     var lexer = new HtmlLexer(parseOptions);
@@ -69,23 +57,6 @@ function compile(html, options) {
 
         scope.$$vnodes = astNodes;
 
-        if (!isComponent(scope)) {
-            scope.$$childDirectives = [];
-            scope.$$childComponents = [];
-
-            scope.$detect = function () {
-                astNodes.forEach(function (astNode) {
-                    astNode.detect();
-                });
-            };
-
-            scope.$destroy = function () {
-                astNodes.forEach(function (astNode) {
-                    astNode.destroy();
-                });
-            };
-        }
-
         astNodes.forEach(function (node) {
             fragment.appendChild(node.link(scope));
         });
@@ -116,4 +87,4 @@ function compute(exp, scope, options) {
     return parser.parse(exp).compile(scope, options);
 }
 
-export { bootstrap, compile, compute, parse };
+export { compile, compute, parse };

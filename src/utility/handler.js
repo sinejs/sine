@@ -4,93 +4,94 @@ import { Messenger } from './message';
 var propChangingMsg = new Messenger();
 var propChangedMsg = new Messenger();
 
-function SetPropertyHandler(onchange, parentKey, deepProxy) {
-    this.selfKey = '__self__';
-    this.onchange = onchange;
-    this.parentKey = parentKey;
-    this.deepProxy = deepProxy;
-}
-
-SetPropertyHandler.prototype.get = function (target, key) {
-    if(this.selfKey === key){
-        return target;
+class SetPropertyHandler {
+    constructor(deepProxy) {
+        this.selfKey = '__self__';
+        this.deepProxy = deepProxy;
     }
 
-    var value = target[key];
-
-    if (this.deepProxy && isObject(value)) {
-        value = new Proxy(value, new SetPropertyHandler(this.onchange, this.parentKey + key + '.', this.deepProxy));
-    }
-
-    return value;
-};
-
-SetPropertyHandler.prototype.set = function (target, key, value) {
-    if (this.deepProxy && isObject(value)) {
-        var self = value[this.selfKey];
-
-        // value is a proxy return by this handler
-        if (self != null) {
-            value = self;
+    get(target, key) {
+        if (this.selfKey === key) {
+            return target;
         }
+
+        var value = target[key];
+
+        if (this.deepProxy && isObject(value)) {
+            value = new Proxy(value, new SetPropertyHandler(this.deepProxy));
+        }
+
+        return value;
     }
 
-    var oldValue = target[key];
+    set(target, key, value) {
+        if (this.deepProxy && isObject(value)) {
+            var self = value[this.selfKey];
 
-    if (oldValue !== value || (isArray(target) && key === 'length')) {
-        var validation = {
-            isValid: true,
-            oldValue: oldValue,
-            newValue: value
-        };
+            // value is a proxy return by this handler
+            if (self != null) {
+                value = self;
+            }
+        }
 
-        this.onchange.fireVmChanging(this.parentKey + key, validation);
-        propChangingMsg.fire({
-            target: target,
-            key: key,
-            data: validation
-        });
+        var oldValue = target[key];
 
-        if (validation.isValid) {
-            target[key] = value;
-
-            this.onchange.fireVmChanged(this.parentKey + key, {
+        if (oldValue !== value || (isArray(target) && key === 'length')) {
+            var validation = {
+                isValid: true,
                 oldValue: oldValue,
                 newValue: value
-            });
-            propChangedMsg.fire({
+            };
+
+            propChangingMsg.fire({
                 target: target,
                 key: key,
-                data: {
-                    oldValue: oldValue,
-                    newValue: value
-                }
+                data: validation
             });
+
+            if (validation.isValid) {
+                target[key] = value;
+                propChangedMsg.fire({
+                    target: target,
+                    key: key,
+                    data: {
+                        oldValue: oldValue,
+                        newValue: value
+                    }
+                });
+            }
         }
+
+        return true;
     }
-
-    return true;
-};
-
-function GetPropertyHandler(props, parentKey, deepProxy) {
-    this.props = props;
-    this.parentKey = parentKey;
-    this.deepProxy = deepProxy;
 }
 
-GetPropertyHandler.prototype.get = function (target, key) {
-    var value = target[key];
-    var prop = this.parentKey + key;
-
-    if (this.deepProxy && isObject(value)) {
-        value = new Proxy(value, new GetPropertyHandler(this.props, prop + '.', this.deepProxy));
+class GetPropertyHandler {
+    constructor(propMaps, deepProxy) {
+        this.propMaps = propMaps;
+        this.deepProxy = deepProxy;
     }
 
-    if (this.props.indexOf(prop) === -1) {
-        this.props.push(prop);
-    }
+    get(target, key) {
+        var value = target[key];
 
-    return value;
-};
+        if (this.deepProxy && isObject(value)) {
+            value = new Proxy(value, new GetPropertyHandler(this.propMaps, this.deepProxy));
+        }
+
+        var existed = this.propMaps.some(function (item) {
+            return item.obj === target && item.prop === key;
+        });
+
+        if (!existed) {
+            this.propMaps.push({
+                obj: target,
+                prop: key
+            });
+        }
+
+        return value;
+    }
+}
 
 export { SetPropertyHandler, GetPropertyHandler, propChangingMsg, propChangedMsg }

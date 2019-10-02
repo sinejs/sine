@@ -1,75 +1,91 @@
 import * as utils from '../utility/utils';
 import {injector} from './injector';
 
-export default function Directive() {
-    this.$$binding = null;
-    this.$$vnode = null;
-    this.output = false;
+export class Directive {
+    constructor() {
+        Directive.construct.call(this);
+    }
+
+    static construct() {
+        this.$$binding = null;
+        this.$$vnode = null;
+        this.output = false;
+        injector.injectServices(this);
+    }
+
+    $hooks() {
+        return {
+            onInit: '',
+            onCompile: '',
+            onInsert: '',
+            onDetect: '',
+            onUpdate: '',
+            onDestroy: ''
+        };
+    }
+
+    $getMeta() {
+        return this.$$meta || {};
+    }
+
+    $setMeta(value) {
+        this.$$meta = value;
+    }
+
+    $bindVNode(vnode) {
+        this.$$vnode = vnode;
+    }
+
+    $setBinding(binding) {
+        this.$$binding = binding;
+    }
+
+    $compile(options) {
+        if (utils.isFunction(this.onCompile)) {
+            this.onCompile.call(this, this.$$vnode, options);
+        }
+    }
+
+    $insert(ele, com) {
+        if (utils.isFunction(this.onInsert)) {
+            this.onInsert.call(this, ele, this.$$binding, com);
+        }
+    }
+
+    $detect(ele, com) {
+        if (utils.isFunction(this.onDetect)) {
+            return this.onDetect.call(this, ele, this.$$binding, com);
+        }
+
+        if (this.$$binding.detect()) {
+            this.$update(ele, com);
+        }
+    }
+
+    $update(ele, com) {
+        if (utils.isFunction(this.onUpdate)) {
+            this.onUpdate.call(this, ele, this.$$binding, com);
+        }
+    }
+
+    $dispose(isFromVNode) {
+        if (utils.isFunction(this.onDestroy)) {
+            this.onDestroy.call(this);
+        }
+
+        if (isFromVNode) {
+            this.$$vnode = null;
+        }
+
+        this.$$binding = null;
+    }
+
+    $destroy() {
+        this.$dispose();
+
+        if (this.$$vnode != null) {
+            this.$$vnode.dispose(true);
+            this.$$vnode = null;
+        }
+    }
 }
-
-Directive.prototype.$onInit = function () {
-    var self = this;
-
-    injector.injectServices(this);
-
-    if (utils.isFunction(this.$$def.onInit)) {
-        this.$$def.onInit.call(this);
-    }
-};
-
-Directive.prototype.$bindVNode = function (vnode) {
-    this.$$vnode = vnode;
-};
-
-Directive.prototype.$setBinding = function (binding) {
-    this.$$binding = binding;
-};
-
-Directive.prototype.$compile = function (options) {
-    if (utils.isFunction(this.$$def.onCompile)) {
-        this.$$def.onCompile.call(this, this.$$vnode, options);
-    }
-};
-
-Directive.prototype.$insert = function (ele, com) {
-    if (utils.isFunction(this.$$def.onInsert)) {
-        this.$$def.onInsert.call(this, ele, this.$$binding, com);
-    }
-};
-
-Directive.prototype.$detect = function (ele, com) {
-    if (utils.isFunction(this.$$def.onDetect)) {
-        return this.$$def.onDetect.call(this, ele, this.$$binding, com);
-    }
-
-    if (this.$$binding.detect()) {
-        this.$update(ele, com);
-    }
-};
-
-Directive.prototype.$update = function (ele, com) {
-    if (utils.isFunction(this.$$def.onUpdate)) {
-        this.$$def.onUpdate.call(this, ele, this.$$binding, com);
-    }
-};
-
-Directive.prototype.$dispose = function (isFromVNode) {
-    if (utils.isFunction(this.$$def.onDestroy)) {
-        this.$$def.onDestroy.call(this);
-    }
-
-    if(isFromVNode){
-        this.$$vnode = null;
-    }
-
-    this.$$binding = null;
-};
-
-Directive.prototype.$destroy = function () {
-    this.$dispose();
-
-    if(this.$$vnode != null){
-        this.$$vnode.dispose(true);
-        this.$$vnode = null;
-    }
-};

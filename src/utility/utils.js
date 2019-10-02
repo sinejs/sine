@@ -47,23 +47,34 @@ function some(obj, action) {
 }
 
 function copy() {
-    var deep = false, index = 0, obj = arguments[index];
+    var deep = false, objIndex = 0, obj = arguments[objIndex], filter;
 
     if (isBoolean(obj)) {
         deep = obj;
-        obj = arguments[++index];
+        objIndex++;
+        obj = arguments[objIndex];
+    }
+
+    if (arguments.length > objIndex + 1) {
+        filter = arguments[objIndex + 1];
     }
 
     if (isArray(obj)) {
-        return obj.map(function (item) {
-            return deep ? copy(item) : item;
+        var newArr = [];
+        obj.forEach(function (item, index) {
+            if (filter == null || filter(obj, index, item)) {
+                newArr.push(deep ? copy(item) : item);
+            }
         });
+        return newArr;
     }
 
     if (isObject(obj)) {
         var newObj = object(obj);
         forEach(obj, function (key, value) {
-            newObj[key] = deep ? copy(value) : value;
+            if (filter == null || filter(obj, key, value)) {
+                newObj[key] = deep ? copy(value) : value;
+            }
         });
         return newObj;
     }
