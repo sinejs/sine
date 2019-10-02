@@ -3,6 +3,10 @@ import { directive } from '../decorator/directive';
 import * as utils from '../utility';
 import { Component } from '../view/component';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-repeat'
+})
 class RepeatDirective extends Directive {
     constructor() {
         super();
@@ -150,8 +154,3 @@ class RepeatDirective extends Directive {
         self.footer.parentNode.insertBefore(fragment, self.footer);
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-repeat'
-})(RepeatDirective);

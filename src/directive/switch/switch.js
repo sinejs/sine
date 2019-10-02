@@ -1,6 +1,10 @@
 import { Directive } from '../../view/directive';
 import { directive } from '../../decorator/directive';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-switch'
+})
 class SwitchDirective extends Directive {
     constructor() {
         super();
@@ -15,8 +19,3 @@ class SwitchDirective extends Directive {
         this.value = binding.compute();
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-switch'
-})(SwitchDirective);

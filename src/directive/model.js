@@ -2,6 +2,10 @@ import { Directive } from '../view/directive';
 import { directive } from '../decorator/directive';
 import * as utils from '../utility';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-model'
+})
 class ModelDirective extends Directive {
     constructor() {
         super();
@@ -38,8 +42,3 @@ class ModelDirective extends Directive {
         this.update(ele, binding, com);
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-model'
-})(ModelDirective);

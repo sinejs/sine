@@ -2,6 +2,10 @@ import { Directive } from '../view/directive';
 import { directive } from '../decorator/directive';
 import * as utils from '../utility';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-style'
+})
 class StyleDirective extends Directive{
     constructor(){
         super();
@@ -36,8 +40,3 @@ class StyleDirective extends Directive{
         this.onInsert(ele, binding);
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-style'
-})(StyleDirective);

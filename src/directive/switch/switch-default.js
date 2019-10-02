@@ -2,6 +2,10 @@ import { Directive } from '../../view/directive';
 import { directive } from '../../decorator/directive';
 import * as utils from '../../utility';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-switch-default'
+})
 class SwitchDefaultDirective extends Directive {
     constructor() {
         super();
@@ -57,8 +61,3 @@ class SwitchDefaultDirective extends Directive {
         this.comment = null;
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-switch-default'
-})(SwitchDefaultDirective);

@@ -2,6 +2,10 @@ import { Directive } from '../view/directive';
 import { directive } from '../decorator/directive';
 import * as utils from '../utility';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-if'
+})
 class IfDirective extends Directive {
     constructor() {
         super();
@@ -32,8 +36,3 @@ class IfDirective extends Directive {
         this.comment = null;
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-if'
-})(IfDirective);

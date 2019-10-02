@@ -2,6 +2,10 @@ import { Directive } from '../../view/directive';
 import { directive } from '../../decorator/directive';
 import * as utils from '../../utility';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-switch-when'
+})
 class SwitchWhenDirective extends Directive {
     constructor() {
         super();
@@ -54,8 +58,3 @@ class SwitchWhenDirective extends Directive {
         this.comment = null;
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-switch-when'
-})(SwitchWhenDirective);

@@ -2,6 +2,10 @@ import axios from 'axios';
 import { Service } from '../view/service';
 import { service } from '../decorator/service';
 
+@service({
+    namespace: 'sine',
+    selector: '$templateCache'
+})
 class TemplateCacheService extends Service {
     constructor() {
         super();
@@ -29,8 +33,3 @@ class TemplateCacheService extends Service {
         return this.promiseCache[url];
     }
 }
-
-service({
-    namespace: 'sine',
-    selector: '$templateCache'
-})(TemplateCacheService);

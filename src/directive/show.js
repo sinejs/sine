@@ -1,6 +1,10 @@
 import { Directive } from '../view/directive';
 import { directive } from '../decorator/directive';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-show'
+})
 class ShowDirective extends Directive{
     constructor(){
         super();
@@ -14,8 +18,3 @@ class ShowDirective extends Directive{
         this.onInsert(ele, binding);
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-show'
-})(ShowDirective);

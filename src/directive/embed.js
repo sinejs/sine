@@ -1,6 +1,10 @@
 import { Directive } from '../view/directive';
 import { directive } from '../decorator/directive';
 
+@directive({
+    namespace: 'sine',
+    selector: 'n-embed'
+})
 class EmbedDirective extends Directive {
     constructor() {
         super();
@@ -13,8 +17,3 @@ class EmbedDirective extends Directive {
         }
     }
 }
-
-directive({
-    namespace: 'sine',
-    selector: 'n-embed'
-})(EmbedDirective);
