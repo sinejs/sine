@@ -1,8 +1,8 @@
 {
-  "name": "blackboard",
+  "name": "sine",
   "version": "0.1.0",
   "description": "a new mvvm framework for client side",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --watch",
@@ -14,8 +14,8 @@
     "mvvm",
     "component"
   ],
-  "author": "gavin",
-  "license": "ISC",
+  "author": "Gavin",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.6.2",
     "@babel/plugin-proposal-class-properties": "^7.5.5",
