@@ -1,6 +1,7 @@
 import { Directive } from '../../view/directive';
 import { directive } from '../../decorator/directive';
 import * as utils from '../../utility';
+import { Messenger } from '../../utility/message';
 
 @directive({
     namespace: 'sine',
@@ -12,17 +13,19 @@ class SwitchWhenDirective extends Directive {
         this.isMatch = false;
         this.attrNode = null;
         this.comment = null;
+        this.switchDir = null;
+        this.isMatchChanged = new Messenger();
     }
 
-    updateIsMatch(ele, binding) {
+    initSwitchDir() {
         var vEle = this.attrNode.ownerVElement;
-        var switchDir = vEle.parentNode.getDirective('n-switch');
+        var switchDirs = vEle.parentNode.getDirective('n-switch');
 
-        if (!switchDir.length) {
+        if (!switchDirs.length) {
             throw new Error('Require n-switch directive');
         }
 
-        this.isMatch = binding.compute() === switchDir[0].value;
+        this.switchDir = switchDirs[0];
     }
 
     onCompile(attrNode, options) {
@@ -30,25 +33,38 @@ class SwitchWhenDirective extends Directive {
     }
 
     onInsert(ele, binding) {
+        var self = this;
+
+        this.initSwitchDir();
         this.comment = document.createComment('n-switch-when');
-        this.updateIsMatch(ele, binding);
+        this.isMatch = (binding.compute() === this.switchDir.value);
 
         if (!this.isMatch) {
             utils.replaceNode(ele, this.comment);
         }
+
+        this.switchDir.valueChanged.on(function () {
+            self.update(ele, binding);
+        });
     }
 
-    onDetect(ele, binding) {
-        this.updateIsMatch(ele, binding);
+    update(ele, binding) {
+        var oldValue = this.isMatch,
+            newValue = (binding.compute() === this.switchDir.value);
 
-        if (this.isMatch) {
-            if (ele.parentNode == null) {
-                utils.replaceNode(this.comment, ele);
+        if (newValue !== oldValue) {
+            this.isMatch = newValue;
+            this.isMatchChanged.fire();
+
+            if (this.isMatch) {
+                if (ele.parentNode == null) {
+                    utils.replaceNode(this.comment, ele);
+                }
             }
-        }
-        else {
-            if (ele.parentNode != null) {
-                utils.replaceNode(ele, this.comment);
+            else {
+                if (ele.parentNode != null) {
+                    utils.replaceNode(ele, this.comment);
+                }
             }
         }
     }
@@ -56,5 +72,6 @@ class SwitchWhenDirective extends Directive {
     onDestroy() {
         this.attrNode = null;
         this.comment = null;
+        this.switchDir = null;
     }
 }

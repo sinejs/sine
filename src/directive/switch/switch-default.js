@@ -9,26 +9,30 @@ import * as utils from '../../utility';
 class SwitchDefaultDirective extends Directive {
     constructor() {
         super();
+        this.isMatch = false;
         this.attrNode = null;
         this.comment = null;
+        this.switchWhenDirs = [];
     }
 
-    isMatch() {
-        var match = true, vEle = this.attrNode.ownerVElement;
+    initSwitchWhenDirs() {
+        var vEle = this.attrNode.ownerVElement;
 
-        while (vEle.previousSibling != null && match) {
-            var whenDir = vEle.previousSibling.getDirective('n-switch-when');
+        while (vEle.previousSibling != null) {
+            var whenDirs = vEle.previousSibling.getDirective('n-switch-when');
 
-            vEle = vEle.previousSibling;
-
-            if (!whenDir.length) {
-                continue;
+            if (whenDirs.length) {
+                this.switchWhenDirs.push(whenDirs[0]);
             }
 
-            match = !whenDir[0].isMatch;
+            vEle = vEle.previousSibling;
         }
+    }
 
-        return match;
+    match() {
+        return !this.switchWhenDirs.some(function (item) {
+            return item.isMatch;
+        });
     }
 
     onCompile(attrNode, options) {
@@ -36,22 +40,38 @@ class SwitchDefaultDirective extends Directive {
     }
 
     onInsert(ele, binding) {
+        var self = this;
+
+        this.initSwitchWhenDirs();
+        this.isMatch = this.match();
         this.comment = document.createComment('n-switch-default');
 
-        if (!this.isMatch()) {
+        if (!this.isMatch) {
             utils.replaceNode(ele, this.comment);
         }
+
+        this.switchWhenDirs.forEach(function (item) {
+            item.isMatchChanged.on(function () {
+                self.update(ele, binding);
+            })
+        });
     }
 
-    onDetect(ele, binding) {
-        if (this.isMatch()) {
-            if (ele.parentNode == null) {
-                utils.replaceNode(this.comment, ele);
+    update(ele, binding) {
+        var oldValue = this.isMatch, newValue = this.match();
+
+        if (newValue !== oldValue) {
+            this.isMatch = newValue;
+
+            if (this.isMatch) {
+                if (ele.parentNode == null) {
+                    utils.replaceNode(this.comment, ele);
+                }
             }
-        }
-        else {
-            if (ele.parentNode != null) {
-                utils.replaceNode(ele, this.comment);
+            else {
+                if (ele.parentNode != null) {
+                    utils.replaceNode(ele, this.comment);
+                }
             }
         }
     }
@@ -59,5 +79,6 @@ class SwitchDefaultDirective extends Directive {
     onDestroy() {
         this.attrNode = null;
         this.comment = null;
+        this.switchWhenDirs = null;
     }
 }
