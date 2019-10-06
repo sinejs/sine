@@ -34,7 +34,12 @@ module.exports = {
             ]
           }
         }
-      }
+      },
+      // Support for CSS as raw text
+      { test: /\.css$/, use: 'raw-loader' },
+
+      // support for .html as raw text
+      { test: /\.html$/, use: 'raw-loader' }
     ]
   }
 };
