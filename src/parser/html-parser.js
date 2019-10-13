@@ -106,6 +106,7 @@ HtmlParser.prototype.element = function (p) {
     if (token.tag && token.end) {
         this.next();
         if (ele.nodeName === 'input') {
+            ele.selfClosed = true;
             return ele;
         }
         if (!token.closing) {

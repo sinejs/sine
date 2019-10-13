@@ -48,4 +48,50 @@ function insertNodeAfter(refNode, newNode) {
     }
 }
 
-export { getChildNodes, clearChildNodes, replaceNode, removeNode, removeNodeBetween, insertNodeAfter };
+function queryElementLoaded(ele, callback) {
+    var cancelToken = false;
+
+    function query() {
+        if (cancelToken) {
+            return;
+        }
+
+        if (ele.clientWidth > 0 && ele.clientHeight > 0) {
+            callback();
+        }
+        else {
+            requestAnimationFrame(query);
+        }
+    }
+
+    requestAnimationFrame(query);
+
+    return function () {
+        cancelToken = true;
+    };
+}
+
+function queryElementUnloaded(ele, callback) {
+    var cancelToken = false;
+
+    function query() {
+        if (cancelToken) {
+            return;
+        }
+
+        if (ele.clientWidth === 0 && ele.clientHeight == 0) {
+            callback();
+        }
+        else {
+            requestAnimationFrame(query);
+        }
+    }
+
+    requestAnimationFrame(query);
+
+    return function () {
+        cancelToken = true;
+    };
+}
+
+export { getChildNodes, clearChildNodes, replaceNode, removeNode, removeNodeBetween, insertNodeAfter, queryElementLoaded, queryElementUnloaded };

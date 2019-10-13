@@ -70,21 +70,50 @@ function compile(html, options) {
 }
 
 function compute(exp, scope, options) {
-    if (exp == null) {
-        return;
-    }
-    exp = exp.trim();
-    if (exp.length === 0) {
-        return;
-    }
-    exp = exp.replace('&gt;', '>').replace('&lt;', '<');
-    var lexer = new Lexer(parseOptions);
-    var parser = new Parser(lexer, parseOptions);
     options = options || {};
     options.createFilter = function (name) {
         return injector.createFilter(name);
     };
-    return parser.parse(exp).compile(scope, options);
+    return parseExp(exp).compile(scope, options);
 }
 
-export { compile, compute, parse };
+function parseExp(exp) {
+    if (exp == null) {
+        return;
+    }
+
+    exp = exp.trim();
+
+    if (exp.length === 0) {
+        return;
+    }
+
+    exp = exp.replace('&gt;', '>').replace('&lt;', '<');
+
+    var lexer = new Lexer(parseOptions);
+    var parser = new Parser(lexer, parseOptions);
+
+    return parser.parse(exp);
+}
+
+function parseAssignment(exp, scope, options) {
+    var ast = parseExp(exp);
+    var memberExp = ast.getMemberExpression();
+
+    if (memberExp == null) {
+        throw new Error(exp + 'is not valid member expression');
+    }
+
+    options = options || {};
+
+    options.createFilter = function (name) {
+        return injector.createFilter(name);
+    };
+
+    return {
+        obj: memberExp.object.compile(scope, options, {}, scope),
+        prop: memberExp.property.compile(scope, options, {}, scope)
+    }
+}
+
+export { compile, compute, parse, parseExp, parseAssignment };

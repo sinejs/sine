@@ -26,9 +26,9 @@ AstNode.prototype.appendChild = function (child) {
     this.childNodes.push(child);
 };
 
-AstNode.prototype.compile = function (scope, options, internals) {
+AstNode.prototype.compile = function (scope, options, context) {
     return this.childNodes.map(function (child) {
-        return child.compile(scope, options || {}, internals);
+        return child.compile(scope, options || {}, context);
     });
 };
 
@@ -41,13 +41,27 @@ ProgramNode.prototype.compile = function (scope, options) {
     return this.childNodes[0].compile(scope, options || {});
 };
 
+ProgramNode.prototype.getMemberExpression = function () {
+    return this.childNodes[0].getMemberExpression();
+};
+
 utils.inherit(ExpressionStatementNode, AstNode);
 function ExpressionStatementNode() {
     ExpressionStatementNode.super.call(this, AST.ExpressionStatement);
 }
 
-ExpressionStatementNode.prototype.compile = function (scope, options, internals) {
-    return this.childNodes[0].compile(scope, options || {}, internals);
+ExpressionStatementNode.prototype.compile = function (scope, options, context) {
+    return this.childNodes[0].compile(scope, options || {}, context);
+};
+
+ExpressionStatementNode.prototype.getMemberExpression = function () {
+    var child = this.childNodes[0];
+
+    if(child instanceof MemberExpressionNode){
+        return child;
+    }
+
+    return null;
 };
 
 utils.inherit(AssignmentExpressionNode, AstNode);
@@ -237,14 +251,18 @@ function MemberExpressionNode(object, property, computed) {
     this.computed = computed;
 }
 
-MemberExpressionNode.prototype.compile = function (scope, options, internals) {
-    var obj = this.object.compile(scope, options, internals);
+MemberExpressionNode.prototype.compile = function (scope, options, context) {
+    var obj = this.object.compile(scope, options, context);
 
     if (utils.isArray(obj)) {
-        return obj[this.property.compile(obj, options, internals)];
+        return obj[this.property.compile(obj, options, context)];
     }
 
-    return this.property.compile(obj, options, internals);
+    if(this.property instanceof MemberExpressionNode) {
+        return obj[this.property.compile(scope, options, context)]
+    }
+
+    return this.property.compile(obj, options, context);
 };
 
 utils.inherit(IdentifierNode, AstNode);
@@ -253,15 +271,15 @@ function IdentifierNode(name) {
     this.name = name;
 }
 
-IdentifierNode.prototype.compile = function (scope, options, internals) {
-    if (internals) {
-        if (internals.assignmentLeft || internals.callee) {
+IdentifierNode.prototype.compile = function (scope, options, context) {
+    if (context) {
+        if (context.assignmentLeft || context.callee) {
             return {
                 obj: scope,
                 prop: this.name
             };
         }
-        else if (internals.propertyKey) {
+        else if (context.propertyKey) {
             return this.name;
         }
     }

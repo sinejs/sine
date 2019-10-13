@@ -400,4 +400,12 @@ export class Component {
             }
         });
     }
+
+    $proxy(data) {
+        if (utils.isObject(data)) {
+            return new Proxy(data, new SetPropertyHandler(true));
+        }
+
+        return data;
+    }
 }

@@ -7,8 +7,16 @@ import template from './form.html';
     selector: 'n-form',
     template: template
 })
-class FormComponent extends Component{
-    constructor(){
+class FormComponent extends Component {
+    constructor() {
         super();
+        this.entity = null;
+        this.config = {
+            groups: []
+        };
+    }
+
+    toggle(group) {
+        this.$proxy(group).collapsed = !group.collapsed;
     }
 }

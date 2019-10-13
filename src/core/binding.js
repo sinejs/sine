@@ -1,6 +1,6 @@
 import { Messenger } from '../utility/message';
 import { GetPropertyHandler } from '../utility/handler';
-import { compute } from '../parser';
+import { compute, parseAssignment } from '../parser';
 
 class ExpNode {
     constructor(text) {
@@ -108,6 +108,14 @@ class Binding {
         }
 
         return this.value;
+    }
+
+    assign(value) {
+        var assignment = parseAssignment(this.text, this.scope);
+
+        if (assignment.obj != null && assignment.prop != null) {
+            this.scope.$proxy(assignment.obj)[assignment.prop] = value;
+        }
     }
 
     watchProps(action) {

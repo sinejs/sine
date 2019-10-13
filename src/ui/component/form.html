@@ -1,1 +1,15 @@
-this is form template
+<div class="accordion">
+    <div class="card" *n-repeat="group in config.groups">
+        <div class="card-header" @click="toggle(group)" *n-bind="group.title"></div>
+
+        <div class="collapse show" *n-collapse="group.collapsed">
+            <div class="card-body">
+                <div class="form-group" *n-repeat="item in group.items">
+                    <label :for="item.field" class="col-form-label-sm" *n-bind="item.label"></label>
+                    <input :type="item.type" class="form-control form-control-sm" :id="item.field" *n-model="entity[item.field]">
+                    <small class="form-text text-muted" *n-show="item.help" *n-bind="item.help"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

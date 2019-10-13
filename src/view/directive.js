@@ -1,4 +1,5 @@
 import * as utils from '../utility/utils';
+import * as eleUtils from '../utility/ele-utils';
 import {injector} from './injector';
 
 export class Directive {
@@ -9,6 +10,7 @@ export class Directive {
     static construct() {
         this.$$binding = null;
         this.$$vnode = null;
+        this.$$disposers = [];
         this.output = false;
         injector.injectServices(this);
     }
@@ -47,8 +49,22 @@ export class Directive {
     }
 
     $insert(ele, com) {
+        var self = this;
+
         if (utils.isFunction(this.onInsert)) {
             this.onInsert.call(this, ele, this.$$binding, com);
+        }
+
+        if (utils.isFunction(this.onLoad)) {
+            this.$$disposers.push(eleUtils.queryElementLoaded(ele, function () {
+                self.onLoad.call(self, ele, self.$$binding, com);
+            }));
+        }
+
+        if (utils.isFunction(this.onUnload)) {
+            this.$$disposers.push(eleUtils.queryElementUnloaded(ele, function () {
+                self.onUnload.call(self, ele, self.$$binding, com);
+            }));
         }
     }
 
@@ -69,6 +85,8 @@ export class Directive {
     }
 
     $dispose(isFromVNode) {
+        var self = this;
+
         if (utils.isFunction(this.onDestroy)) {
             this.onDestroy.call(this);
         }
@@ -76,6 +94,10 @@ export class Directive {
         if (isFromVNode) {
             this.$$vnode = null;
         }
+
+        this.$$disposers.forEach(function (disposer) {
+            disposer.call(self);
+        });
 
         this.$$binding = null;
     }

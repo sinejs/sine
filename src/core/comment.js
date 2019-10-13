@@ -8,6 +8,14 @@ class CommentNode extends VNode {
     link() {
         return document.createComment(this.nodeValue);
     }
+
+    getOuterTpl() {
+        return this.nodeValue;
+    }
+
+    getInnerTpl() {
+        return this.nodeValue;
+    }
 }
 
 export { CommentNode };

@@ -23,7 +23,7 @@ class RepeatDirective extends Directive {
     onCompile(attrNode) {
         var arg = attrNode.nodeValue;
         var eleNode = attrNode.ownerVElement;
-        var pattern = /^(\w+)\s+in\s+(\w+)$/i;
+        var pattern = /^([a-z_]+\w+)\s+in\s+(.+)$/i;
         var result = pattern.exec(arg);
 
         if (result == null) {

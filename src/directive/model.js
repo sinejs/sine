@@ -25,13 +25,13 @@ class ModelDirective extends Directive {
 
         if (com == null) {
             ele.addEventListener('change', function (e) {
-                binding.scope.$setAttr(binding.text, e.target.value);
+                binding.assign(e.target.value);
             });
         }
         else {
             if (utils.isMessenger(com.change)) {
                 com.change.on(function (e, args) {
-                    binding.scope.$setAttr(binding.text, args.newvalue);
+                    binding.assign(args.newvalue);
                 });
             }
             throw new Error('Compoent ' + com.$$meta.selector + 'must define [change] event');
