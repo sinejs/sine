@@ -6,37 +6,42 @@ import * as utils from '../utility';
     namespace: 'sine',
     selector: 'n-style'
 })
-class StyleDirective extends Directive{
-    constructor(){
+class StyleDirective extends Directive {
+    constructor() {
         super();
     }
 
-    onInsert(ele, binding){
-        var value = binding.compute();
+    onInsert() {
+        this.setStyle();
+    }
+
+    onUpdate() {
+        this.setStyle();
+    }
+
+    setStyle() {
+        var self = this;
+        var value = this.$binding.compute();
 
         if (!value) {
-            ele.removeAttribute('style');
+            this.$htmlElement.removeAttribute('style');
         }
 
         if (utils.isString(value)) {
-            ele.style = value;
+            this.$htmlElement.style = value;
         }
         else if (utils.isObject(value)) {
             utils.forEach(value, function (key, value) {
-                ele.style[key] = value;
+                self.$htmlElement.style[key] = value;
             });
-            binding.scope.$watch(value, /\w+/i, function () {
+            this.$binding.scope.$watch(value, '*', function () {
                 utils.forEach(value, function (key, value) {
-                    ele.style[key] = value;
+                    self.$htmlElement.style[key] = value;
                 });
             });
         }
         else {
             throw new Error('Parameter of n-style should be string or object');
         }
-    }
-
-    onUpdate(ele, binding) {
-        this.onInsert(ele, binding);
     }
 }

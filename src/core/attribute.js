@@ -33,20 +33,21 @@ class AttrNode extends VNode {
     constructor(name, value) {
         super(VNodeType.attribute, name, value);
         this.quote = '"';
-        this.orgNodeName = name;
+        this.origin = name;
         this.isEvent = false;
         this.isBinding = false;
         this.isDomEvent = false;
         this.isDirective = false;
         this.directive = null;
-        this.ownerVElement = null;
         this.ownerElement = null;
         this.ownerComponent = null;
+        this.htmlElement = null;
         this.binding = new Binding();
+        this.priority = 0;
     }
 
     belongTo(key) {
-        return this.orgNodeName === key;
+        return this.origin === key;
     }
 
     setValue(value) {
@@ -68,8 +69,9 @@ class AttrNode extends VNode {
         if (this.isDirective) {
             if (options.containsDirective(this.nodeName)) {
                 this.directive = options.createDirective(this.nodeName);
-                this.directive.$bindVNode(this);
-                this.binding.setOutput(this.directive.output);
+                this.directive.$bindNode(this);
+                this.binding.setOutput(this.directive.$output);
+                this.priority = this.directive.$priority;
             }
             else {
                 throw new Error('directive ' + this.nodeName + ' is not defined');
@@ -77,22 +79,28 @@ class AttrNode extends VNode {
         }
     }
 
-    link(scope, ownerElement, ownerComponent) {
+    notifyCompiled(options) {
+        if (this.directive != null) {
+            this.directive.$compile(options);
+        }
+    }
+
+    link(scope, htmlElement, ownerComponent) {
         var self = this;
 
         this.scope = scope;
-        this.ownerElement = ownerElement;
+        this.htmlElement = htmlElement;
         this.ownerComponent = ownerComponent;
         this.binding.setScope(scope);
 
         if (this.isEvent) {
             if (this.isDomEvent) {
-                this.ownerElement.addEventListener(this.nodeName, function (e) {
+                this.htmlElement.addEventListener(this.nodeName, function (e) {
                     self.binding.compute({
                         locals: {
                             $event: e,
                             $args: null,
-                            $element: self.ownerElement
+                            $element: self.htmlElement
                         }
                     });
                 });
@@ -103,7 +111,7 @@ class AttrNode extends VNode {
                         locals: {
                             $event: e,
                             $args: args,
-                            $element: self.ownerElement
+                            $element: self.htmlElement
                         }
                     });
                 });
@@ -119,15 +127,15 @@ class AttrNode extends VNode {
             }
             else {
                 if (this.nodeName.startsWith('style')) {
-                    utils.setProperty(this.ownerElement, this.nodeName, this.binding.compute());
+                    utils.setProperty(this.htmlElement, this.nodeName, this.binding.compute());
                 }
                 else {
-                    this.ownerElement.setAttribute(this.nodeName, this.binding.compute());
+                    this.htmlElement.setAttribute(this.nodeName, this.binding.compute());
                 }
             }
 
-            this.binding.watchProps(function () {
-                self.detect();
+            this.binding.onchange(function () {
+                self.update();
             });
         }
     }
@@ -139,7 +147,7 @@ class AttrNode extends VNode {
             }
         }
         else {
-            this.directive.$detect(this.ownerElement, this.ownerComponent);
+            this.directive.$detect();
         }
     }
 
@@ -148,38 +156,51 @@ class AttrNode extends VNode {
     }
 
     update() {
-        if (this.ownerComponent != null && this.ownerComponent.$hasAttr(this.nodeName)) {
-            this.ownerComponent.$setAttr(this.nodeName, this.binding.value);
+        if (this.directive != null) {
+            this.directive.$update();
         }
         else {
-            if (this.nodeName.startsWith('style')) {
-                utils.setProperty(this.ownerElement, this.nodeName, this.binding.value);
+            if (this.ownerComponent != null && this.ownerComponent.$hasAttr(this.nodeName)) {
+                this.ownerComponent.$setAttr(this.nodeName, this.binding.value);
             }
             else {
-                this.ownerElement.setAttribute(this.nodeName, this.binding.value);
-                if (this.ownerElement.nodeName === 'INPUT' && this.nodeName === 'value') {
-                    this.ownerElement.value = this.binding.value;
+                if (this.nodeName.startsWith('style')) {
+                    utils.setProperty(this.htmlElement, this.nodeName, this.binding.value);
+                }
+                else {
+                    this.htmlElement.setAttribute(this.nodeName, this.binding.value);
+                    if (this.htmlElement.nodeName === 'INPUT' && this.nodeName === 'value') {
+                        this.htmlElement.value = this.binding.value;
+                    }
                 }
             }
         }
     }
 
-    afterLink() {
+    notifyLinked() {
         if (this.directive) {
-            this.directive.$insert(this.ownerElement, this.ownerComponent);
+            this.directive.$insert();
         }
     }
 
-    directives() {
-        return this.directive == null ? [] : [this.directive];
+    getDirective(key) {
+        if (key == null) {
+            return this.directive;
+        }
+
+        if (this.directive != null && this.directive.$$meta.selector === key) {
+            return this.directive;
+        }
+
+        return null;
     }
 
     getOuterTpl() {
-        return this.orgNodeName + (this.nodeValue == null ? '' : ('=' + this.quote + this.nodeValue + this.quote));
+        return this.origin + (this.nodeValue == null ? '' : ('=' + this.quote + this.nodeValue + this.quote));
     }
 
     getInnerTpl() {
-        return this.orgNodeName + (this.nodeValue == null ? '' : ('=' + this.quote + this.nodeValue + this.quote));
+        return this.origin + (this.nodeValue == null ? '' : ('=' + this.quote + this.nodeValue + this.quote));
     }
 
     dispose(isFromDirective) {
@@ -189,9 +210,9 @@ class AttrNode extends VNode {
 
         this.binding.destroy();
         this.binding = null;
-        this.ownerVElement = null;
         this.ownerElement = null;
         this.ownerComponent = null;
+        this.htmlElement = null;
         this.$destroy();
     }
 

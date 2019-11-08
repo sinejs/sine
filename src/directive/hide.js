@@ -5,16 +5,21 @@ import { directive } from '../decorator/directive';
     namespace: 'sine',
     selector: 'n-hide'
 })
-class HideDirective extends Directive{
-    constructor(){
+class HideDirective extends Directive {
+    constructor() {
         super();
     }
 
-    onInsert(ele, binding){
-        ele.style.display = binding.compute() ? 'none' : 'initial';
+    onInsert() {
+        this.hide();
     }
 
-    onUpdate(ele, binding) {
-        this.onInsert(ele, binding);
+    onUpdate() {
+        this.hide();
+    }
+
+    hide() {
+        var value = this.$binding.compute();
+        this.$htmlElement.style.display = value ? 'none' : 'initial';
     }
 }

@@ -12,11 +12,29 @@ class FormComponent extends Component {
         super();
         this.entity = null;
         this.config = {
-            groups: []
+            groups: [],
+            validator: {}
         };
     }
 
     toggle(group) {
-        this.$proxy(group).collapsed = !group.collapsed;
+        var proxy = group.toProxy();
+        proxy.collapsed = !group.collapsed;
+    }
+
+    isValid(item) {
+        if (this[item.field] != null) {
+            return this[item.field].$valid;
+        }
+
+        return true;
+    }
+
+    getFeedback(item) {
+        if (this[item.field] != null) {
+            return this[item.field].$feedback;
+        }
+
+        return null;
     }
 }

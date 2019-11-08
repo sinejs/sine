@@ -7,7 +7,7 @@ class TextNode extends VNode {
     constructor() {
         super(VNodeType.text, '#text');
         this.binding = new Binding();
-        this.element = null;
+        this.htmlElement = null;
     }
 
     compile() {
@@ -19,8 +19,8 @@ class TextNode extends VNode {
 
         this.binding.setScope(scope);
 
-        this.binding.watchProps(function () {
-            self.detect();
+        this.binding.onchange(function () {
+            self.update();
         });
 
         return this.render(this.binding.compute());
@@ -31,12 +31,12 @@ class TextNode extends VNode {
     }
 
     update() {
-        eleUtils.replaceNode(this.element, this.render(this.binding.value));
+        eleUtils.replaceNode(this.htmlElement, this.render(this.binding.value));
     }
 
     render(value) {
-        this.element = document.createTextNode(value);
-        return this.element;
+        this.htmlElement = document.createTextNode(value);
+        return this.htmlElement;
     }
 
     getOuterTpl() {
@@ -50,7 +50,7 @@ class TextNode extends VNode {
     destroy() {
         this.binding.destroy();
         this.binding = null;
-        this.element = null;
+        this.htmlElement = null;
         this.$destroy();
     }
 }

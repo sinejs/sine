@@ -1,5 +1,5 @@
+import { isObject, forEach } from '../utility/utils';
 import { Messenger } from '../utility/message';
-import { GetPropertyHandler } from '../utility/handler';
 import { compute, parseAssignment } from '../parser';
 
 class ExpNode {
@@ -7,12 +7,6 @@ class ExpNode {
         this.text = text;
         this.value = null;
         this.oldValue = null;
-    }
-
-    getProps(scope, options) {
-        var objProps = [];
-        compute(this.text, new Proxy(scope, new GetPropertyHandler(objProps, true)), options);
-        return objProps;
     }
 
     compute(scope, options) {
@@ -27,7 +21,6 @@ class ExpNode {
     destroy() {
         this.value = null;
         this.oldValue = null;
-        this.props = null;
     }
 }
 
@@ -40,6 +33,8 @@ class Binding {
         this.rightStr = '';
         this.output = false;
         this.value = null;
+        this.oldValue = null;
+        this.unwatches = [];
         this.change = new Messenger();
     }
 
@@ -89,6 +84,10 @@ class Binding {
     compute(options) {
         var self = this;
 
+        options = options || {};
+
+        this.oldValue = this.value;
+
         if (this.segments.length === 0) {
             this.value = this.text;
         }
@@ -114,48 +113,76 @@ class Binding {
         var assignment = parseAssignment(this.text, this.scope);
 
         if (assignment.obj != null && assignment.prop != null) {
-            this.scope.$proxy(assignment.obj)[assignment.prop] = value;
+            assignment.obj.toProxy()[assignment.prop] = value;
         }
     }
 
-    watchProps(action) {
+    listen() {
+        var self = this;
+        this.unwatches = this.segments.map(function (segment) {
+            return self.scope.$watch(segment.exp.text, function () {
+                self.defer(function () {
+                    if (self.detect()) {
+                        self.change.fire();
+                    }
+                });
+            });
+        });
+    }
+
+    defer(action) {
+        var self = this;
+
+        this.cancelTimeout();
+
+        this.timeoutId = setTimeout(function () {
+            self.timeoutId = null;
+            action.call(self);
+        });
+    }
+
+    cancelTimeout() {
+        if (this.timeoutId != null) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+    }
+
+    onchange(action) {
         if (this.output) {
             return;
         }
 
-        var self = this, objProps = [];
-
-        this.segments.forEach(function (segment) {
-            objProps = objProps.concat(segment.exp.getProps(self.scope));
-        });
-
-        objProps.forEach(function (objProp) {
-            self.scope.$watch(objProp.obj, objProp.prop, function () {
-                self.change.fire();
-            });
-        });
+        this.listen();
 
         if (action != null) {
-            self.change.on(action);
+            this.change.on(action);
         }
     }
 
-    detect(options) {
+    detect() {
         if (this.output) {
             return false;
         }
-        var self = this;
         this.compute();
-        return this.segments.some(function (segment) {
-            return segment.exp.detect(self.scope, options);
-        });
+        return this.value !== this.oldValue;
+        // return this.segments.some(function (segment) {
+        //     return segment.exp.detect();
+        // });
     }
 
     destroy() {
+        this.cancelTimeout();
+        this.unwatches.forEach(function (unwatch) {
+            unwatch.call();
+        });
         this.segments.forEach(function (segment) {
             segment.exp.destroy();
         });
+        this.segments = null;
         this.scope = null;
+        this.value = null;
+        this.oldValue = null;
     }
 }
 

@@ -1,17 +1,50 @@
 import * as utils from '../utility/utils';
-import * as eleUtils from '../utility/ele-utils';
 import {injector} from './injector';
 
 export class Directive {
+    get $htmlElement() {
+        if (this.$element != null) {
+            return this.$element.htmlElement;
+        }
+
+        return null;
+    }
+
+    get $component() {
+        if (this.$element != null) {
+            return this.$element.ownerComponent;
+        }
+
+        return null;
+    }
+
+    get $scope() {
+        if (this.$binding != null) {
+            return this.$binding.scope;
+        }
+
+        return null;
+    }
+
     constructor() {
         Directive.construct.call(this);
     }
 
     static construct() {
-        this.$$binding = null;
-        this.$$vnode = null;
+        // private properties
         this.$$disposers = [];
-        this.output = false;
+        this.$$cancelAnimationToken = false;
+        // private properties
+
+        // public properties
+        this.$output = false;
+        this.$binding = null;
+        this.$attr = null;
+        this.$element = null;
+        this.$priority = 0;
+        this.$elementloaded = false;
+        // public properties
+
         injector.injectServices(this);
     }
 
@@ -34,80 +67,116 @@ export class Directive {
         this.$$meta = value;
     }
 
-    $bindVNode(vnode) {
-        this.$$vnode = vnode;
+    $bindNode(node) {
+        this.$attr = node;
+        this.$element = node.ownerElement;
     }
 
     $setBinding(binding) {
-        this.$$binding = binding;
+        this.$binding = binding;
     }
 
     $compile(options) {
         if (utils.isFunction(this.onCompile)) {
-            this.onCompile.call(this, this.$$vnode, options);
+            this.onCompile.call(this, options);
         }
     }
 
-    $insert(ele, com) {
+    $insert() {
         var self = this;
 
         if (utils.isFunction(this.onInsert)) {
-            this.onInsert.call(this, ele, this.$$binding, com);
+            this.onInsert.call(this);
         }
 
-        if (utils.isFunction(this.onLoad)) {
-            this.$$disposers.push(eleUtils.queryElementLoaded(ele, function () {
-                self.onLoad.call(self, ele, self.$$binding, com);
-            }));
-        }
-
-        if (utils.isFunction(this.onUnload)) {
-            this.$$disposers.push(eleUtils.queryElementUnloaded(ele, function () {
-                self.onUnload.call(self, ele, self.$$binding, com);
-            }));
+        if (utils.isFunction(this.onLoad) || utils.isFunction(this.onUnload)) {
+            this.$requestAnimation();
         }
     }
 
-    $detect(ele, com) {
-        if (utils.isFunction(this.onDetect)) {
-            return this.onDetect.call(this, ele, this.$$binding, com);
-        }
-
-        if (this.$$binding.detect()) {
-            this.$update(ele, com);
-        }
+    $isLoaded() {
+        return this.$htmlElement.clientWidth > 0 && this.$htmlElement.clientHeight > 0;
     }
 
-    $update(ele, com) {
-        if (utils.isFunction(this.onUpdate)) {
-            this.onUpdate.call(this, ele, this.$$binding, com);
-        }
-    }
-
-    $dispose(isFromVNode) {
+    $requestAnimation() {
         var self = this;
+
+        function query() {
+            if (self.$$cancelAnimationToken) {
+                return;
+            }
+
+            if (self.$isLoaded()) {
+                if (!self.$elementloaded) {
+                    self.$elementloaded = true;
+                    if (self.onLoad != null) {
+                        self.onLoad.call(self);
+                    }
+                }
+            }
+            else {
+                if (self.$elementloaded) {
+                    self.$elementloaded = false;
+                    if (self.onUnload != null) {
+                        self.onUnload.call(self);
+                    }
+                }
+            }
+
+            requestAnimationFrame(query);
+        }
+
+        requestAnimationFrame(query);
+    }
+
+    $cancelAnimation() {
+        this.$$cancelAnimationToken = true;
+    }
+
+    $detect() {
+        if (utils.isFunction(this.onDetect)) {
+            return this.onDetect.call(this);
+        }
+
+        if (this.$binding.detect()) {
+            this.$update();
+        }
+    }
+
+    $update() {
+        if (utils.isFunction(this.onUpdate)) {
+            this.onUpdate.call(this);
+        }
+    }
+
+    $dispose(destroyFromAttr) {
+        var self = this;
+
+        this.$cancelAnimation();
 
         if (utils.isFunction(this.onDestroy)) {
             this.onDestroy.call(this);
         }
 
-        if (isFromVNode) {
-            this.$$vnode = null;
+        if (destroyFromAttr) {
+            this.$attr = null;
+            this.$element = null;
         }
 
         this.$$disposers.forEach(function (disposer) {
             disposer.call(self);
         });
 
-        this.$$binding = null;
+        this.$binding = null;
     }
 
     $destroy() {
         this.$dispose();
 
-        if (this.$$vnode != null) {
-            this.$$vnode.dispose(true);
-            this.$$vnode = null;
+        if (this.$attr != null) {
+            this.$attr.dispose(true);
+            this.$attr = null;
+            this.$element = null;
         }
     }
 }

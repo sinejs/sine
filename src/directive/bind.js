@@ -5,16 +5,20 @@ import { directive } from '../decorator/directive';
     namespace: 'sine',
     selector: 'n-bind'
 })
-class BindDirective extends Directive{
-    constructor(){
+class BindDirective extends Directive {
+    constructor() {
         super();
     }
 
-    onInsert(ele, binding){
-        ele.innerText = binding.compute();
+    onInsert() {
+        this.bind();
     }
 
-    onUpdate(ele, binding) {
-        this.onInsert(ele, binding);
+    onUpdate() {
+        this.bind();
+    }
+
+    bind() {
+        this.$htmlElement.innerText = this.$binding.compute();
     }
 }

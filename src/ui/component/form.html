@@ -6,8 +6,9 @@
             <div class="card-body">
                 <div class="form-group" *n-repeat="item in group.items">
                     <label :for="item.field" class="col-form-label-sm" *n-bind="item.label"></label>
-                    <input :type="item.type" class="form-control form-control-sm" :id="item.field" *n-model="entity[item.field]">
-                    <small class="form-text text-muted" *n-show="item.help" *n-bind="item.help"></small>
+                    <input :type="item.type" class="form-control form-control-sm {{ isValid(item)?'is-valid':'is-invalid' }}" :name="item.field" *n-model="entity[item.field]" *n-validate="item.validator">
+                    <small class="form-text text-muted" *n-show="item.help && !getFeedback(item)" *n-bind="item.help"></small>
+                    <div class="{{ isValid(item)?'valid-feedback':'invalid-feedback'}}" *n-bind="getFeedback(item)" *n-show="getFeedback(item)"></div>
                 </div>
             </div>
         </div>

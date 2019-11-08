@@ -1,14 +1,19 @@
 import * as eleUtils from '../utility/ele-utils';
 import { VNodeType, VNode } from './base';
-import { CustomNode } from './custom';
+import { ConnectionNode } from './connection';
 import { AttrNode } from './attribute';
 import { parse } from '../parser';
+import { orderBy } from '../utility/utils';
 
 class ElementNode extends VNode {
+    get parentElement() {
+        return this.parentNode;
+    }
+
     constructor() {
         super(VNodeType.element, name);
         this.attributes = [];
-        this.element = null;
+        this.htmlElement = null;
         this.component = null;
         this.selfClosed = false;
         this.compileOptions = null;
@@ -16,7 +21,7 @@ class ElementNode extends VNode {
     }
 
     $pushAttribute(attr) {
-        attr.ownerVElement = this;
+        attr.ownerElement = this;
         this.attributes.push(attr);
     }
 
@@ -35,7 +40,7 @@ class ElementNode extends VNode {
         }
         else {
             target = new AttrNode(key, value);
-            target.ownerVElement = this;
+            target.ownerElement = this;
             target.compile(this.compileOptions);
         }
 
@@ -67,11 +72,11 @@ class ElementNode extends VNode {
     }
 
     appendAttribute(attr) {
-        if (attr.ownerVElement != null) {
+        if (attr.ownerElement != null) {
             throw new Error("Current attribute is not new!");
         }
 
-        attr.ownerVElement = this;
+        attr.ownerElement = this;
         attr.compile(this.compileOptions);
         this.attributes.push(attr);
         return attr;
@@ -127,23 +132,24 @@ class ElementNode extends VNode {
     }
 
     getDirective(key) {
-        var result = [];
+        var result = null;
 
-        this.attributes.map(function (attr) {
-            return attr.directives();
-        }).forEach(function (item) {
-            result = result.concat(item);
+        this.attributes.some(function (attr) {
+            result = attr.getDirective(key);
+            return result != null;
         });
 
-        return result.filter(function (item) {
-            return item.$$meta.selector === key;
-        });
+        return result;
     }
 
     compile(options) {
         this.compileOptions = options;
         this.attributes.forEach(function (attr) {
             attr.compile(options);
+        });
+        // perform directive according to priority
+        this.attributes = orderBy(this.attributes, function (item) {
+            return item.priority;
         });
         this.isComponent = options.containsComponent(this.nodeName);
         if (!this.isComponent) {
@@ -153,61 +159,53 @@ class ElementNode extends VNode {
         }
     }
 
-    directives() {
-        var result = [];
-
-        this.attributes.map(function (attr) {
-            return attr.directives();
-        }).forEach(function (item) {
-            result = result.concat(item);
+    notifyCompiled(options) {
+        this.attributes.forEach(function (attr) {
+            attr.notifyCompiled(options);
         });
 
         if (this.component == null) {
-            this.childNodes.map(function (child) {
-                return child.directives();
-            }).forEach(function (item) {
-                result = result.concat(item);
+            this.childNodes.forEach(function (child) {
+                child.notifyCompiled(options);
             });
         }
-
-        return result;
     }
 
     link(scope) {
         var self = this;
 
         self.scope = scope;
-        self.element = document.createElement(self.nodeName);
+        self.htmlElement = document.createElement(self.nodeName);
 
         if (this.isComponent) {
-            this.component = scope.$createComponent(this.nodeName);
-            this.component.$bindVNode(this);
+            this.component = scope.$createChildCmp(this.nodeName);
+            this.component.$bindNode(this);
             self.attributes.forEach(function (attr) {
-                attr.link(scope, self.element, self.component);
+                attr.link(scope, self.htmlElement, self.component);
             });
             self.component.$initAttrDone();
-            self.component.$mount(self.element);
+            self.component.$mount(self.htmlElement);
         }
         else {
             this.attributes.forEach(function (attr) {
-                attr.link(scope, self.element);
+                attr.link(scope, self.htmlElement);
             });
             self.childNodes.forEach(function (child) {
-                self.element.appendChild(child.link(scope));
+                self.htmlElement.appendChild(child.link(scope));
             });
         }
 
-        return self.element;
+        return self.htmlElement;
     }
 
-    afterLink() {
+    notifyLinked() {
         this.attributes.forEach(function (attr) {
-            attr.afterLink();
+            attr.notifyLinked();
         });
 
         if (this.component == null) {
             this.childNodes.forEach(function (child) {
-                child.afterLink();
+                child.notifyLinked();
             });
         }
     }
@@ -238,7 +236,7 @@ class ElementNode extends VNode {
         });
 
         this.attributes.length = 0;
-        this.removeDomElement();
+        this.removeHtmlElement();
         this.compileOptions = null;
         this.$destroy();
     }
@@ -252,13 +250,13 @@ class ElementNode extends VNode {
         this.dispose();
     }
 
-    getDomElement() {
-        return this.element;
+    getHtmlElement() {
+        return this.htmlElement;
     }
 
-    removeDomElement() {
-        if (this.element != null) {
-            eleUtils.removeNode(this.element);
+    removeHtmlElement() {
+        if (this.htmlElement != null) {
+            eleUtils.removeNode(this.htmlElement);
         }
     }
 
@@ -270,8 +268,8 @@ class ElementNode extends VNode {
         return new AttrNode(name);
     }
 
-    createCustom(name, linker) {
-        return new CustomNode(name, linker);
+    createConnection(name, linker) {
+        return new ConnectionNode(name, linker);
     }
 }
 

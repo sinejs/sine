@@ -12,7 +12,7 @@ var VNodeType = {
     documentType: 10,
     documentFragment: 11,
     notation: 12,
-    custom: 101
+    connection: 101
 };
 
 // virtual node
@@ -27,7 +27,7 @@ class VNode {
         this.nextSibling = null;
         this.firstChild = null;
         this.lastChild = null;
-        this.ownerVDocument = null;
+        this.ownerDocument = null;
         this.scope = null;
     }
 
@@ -88,7 +88,7 @@ class VNode {
         this.childNodes.length = 0;
         this.firstChild = null;
         this.lastChild = null;
-        this.ownerVDocument = null;
+        this.ownerDocument = null;
         this.scope = null;
     }
 
@@ -225,18 +225,10 @@ class VNode {
         });
     }
 
-    directives() {
-        var result = [];
-        this.childNodes.map(function (child) {
-            return child.directives();
-        }).forEach(function (item) {
-            result = result.concat(item);
+    notifyCompiled(options) {
+        this.childNodes.forEach(function (child) {
+            child.notifyCompiled(options);
         });
-        return result;
-    }
-
-    getDirective() {
-        return [];
     }
 
     link(scope) {
@@ -246,9 +238,9 @@ class VNode {
         });
     }
 
-    afterLink() {
+    notifyLinked() {
         this.childNodes.forEach(function (child) {
-            child.afterLink();
+            child.notifyLinked();
         });
     }
 

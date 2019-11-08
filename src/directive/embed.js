@@ -10,10 +10,10 @@ class EmbedDirective extends Directive {
         super();
     }
 
-    onCompile(attrNode, options) {
+    onCompile(options) {
         var embedTpl = options.getEmbedTpl();
         if (embedTpl) {
-            attrNode.ownerVElement.setInnerTpl(embedTpl);
+            this.$element.setInnerTpl(embedTpl);
         }
     }
 }

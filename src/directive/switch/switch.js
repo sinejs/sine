@@ -13,18 +13,18 @@ class SwitchDirective extends Directive {
         this.valueChanged = new Messenger();
     }
 
-    onInsert(ele, binding) {
-        this.value = binding.compute();
+    onInsert() {
+        this.value = this.$binding.compute();
     }
 
-    onUpdate(ele, binding) {
+    onUpdate() {
         var oldValue = this.value,
-            newValue = binding.compute();
+            newValue = this.$binding.compute();
 
-        if(newValue !== oldValue){
+        if (newValue !== oldValue) {
             this.value = newValue;
         }
-        
+
         this.valueChanged.fire({
             oldValue: oldValue,
             newValue: newValue

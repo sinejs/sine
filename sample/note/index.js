@@ -37,7 +37,7 @@
                     zIndex: this.nextZIndex()
                 };
 
-                notes.push(newNote);
+                notes.toProxy().push(newNote);
 
                 return newNote;
             },
@@ -66,34 +66,35 @@
                 var index = this.notes.indexOf(note);
 
                 if (index !== -1) {
-                    this.notes.splice(index, 1);
+                    this.notes.toProxy().splice(index, 1);
                 }
             },
             toggleEdit: function () {
-                this.isEditing = !this.isEditing;
+                this.toProxy().isEditing = !this.isEditing;
             }
         }
     });
 
-    sine.namespace(noteApp).directive('note-pan', function(ele, binding) {
-        var scope = binding.scope;
-        var hammerTime = new Hammer(ele);
+    sine.namespace(noteApp).directive('note-pan', function() {
+        var scope = this.$binding.scope;
+        var hammerTime = new Hammer(this.$htmlElement);
 
         var x, y;
-        hammerTime.on('panstart', function() {
+        hammerTime.on('panstart', function () {
             x = scope.model.position.x;
             y = scope.model.position.y;
         });
 
-        hammerTime.on('panmove', function(ev) {
-            scope.proxy.model.position.x = x + ev.deltaX;
-            scope.proxy.model.position.y = y + ev.deltaY;
+        hammerTime.on('panmove', function (ev) {
+            var pos = scope.model.position.toProxy();
+            pos.x = x + ev.deltaX;
+            pos.y = y + ev.deltaY;
         });
     });
 
-    sine.namespace(noteApp).directive('note-resize', function(ele, binding) {
-        var scope = binding.scope;
-        var hammerTime = new Hammer(ele);
+    sine.namespace(noteApp).directive('note-resize', function() {
+        var scope = this.$binding.scope;
+        var hammerTime = new Hammer(this.$htmlElement);
 
         var x, y;
         hammerTime.on('panstart', function() {
@@ -102,8 +103,9 @@
         });
 
         hammerTime.on('panmove', function(ev) {
-            scope.proxy.model.size.width = x + ev.deltaX;
-            scope.proxy.model.size.height = y + ev.deltaY;
+            var size = scope.model.size.toProxy();
+            size.width = x + ev.deltaX;
+            size.height = y + ev.deltaY;
         });
     });
 
@@ -119,7 +121,7 @@
         methods: {
             onMouseDown: function () {
                 if (!this.noteService.isMaxZIndex(this.model.zIndex)) {
-                    this.proxy.model.zIndex = this.noteService.nextZIndex();
+                    this.model.toProxy().zIndex = this.noteService.nextZIndex();
                 }
             },
             onInit: function () {
@@ -150,14 +152,14 @@
         },
         methods: {
             createNote: function () {
-                this.noteService.create(this.proxy.notes);
+                this.noteService.create(this.notes);
                 this.noteService.save();
             },
             saveNote: function () {
                 this.noteService.save();
             },
             clearNote: function () {
-                this.noteService.removeAll(this.proxy.notes);
+                this.noteService.removeAll(this.notes);
                 this.noteService.save();
             },
             removeNote: function (note) {
@@ -165,7 +167,7 @@
                 this.noteService.save();
             },
             editNote: function () {
-                this.proxy.noteService.toggleEdit();
+                this.noteService.toggleEdit();
             }
         }
     });

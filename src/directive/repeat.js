@@ -20,9 +20,9 @@ class RepeatDirective extends Directive {
         this.footer = null;
     }
 
-    onCompile(attrNode) {
-        var arg = attrNode.nodeValue;
-        var eleNode = attrNode.ownerVElement;
+    onCompile() {
+        var arg = this.$attr.nodeValue;
+        var element = this.$element;
         var pattern = /^([a-z_]+\w+)\s+in\s+(.+)$/i;
         var result = pattern.exec(arg);
 
@@ -33,11 +33,11 @@ class RepeatDirective extends Directive {
         this.itemExp = result[1];
         this.itemsExp = result[2];
 
-        eleNode.removeAttribute(attrNode);
-        this.itemTemplate = eleNode.getOuterTpl();
+        element.removeAttribute(this.$attr);
+        this.itemTemplate = element.getOuterTpl();
 
         var self = this;
-        var custom = eleNode.createCustom('n-repeat', function (scope) {
+        var connection = element.createConnection('n-repeat', function (scope) {
             var fragment = document.createDocumentFragment();
             var items = scope.$eval(self.itemsExp);
 
@@ -51,14 +51,14 @@ class RepeatDirective extends Directive {
             return fragment;
         });
 
-        eleNode.parentNode.replaceChild(eleNode, custom);
-        eleNode.destroy();
+        element.parentNode.replaceChild(element, connection);
+        element.destroy();
 
-        custom.onInsert = function () {
+        connection.onInsert = function () {
             self.render();
         };
 
-        custom.onDetect = function () {
+        connection.onDetect = function () {
             var items = self.scope.$eval(self.itemsExp);
 
             if (self.dataItems !== items) {
@@ -72,10 +72,10 @@ class RepeatDirective extends Directive {
             }
         };
 
-        custom.onDestroy = function () {
+        connection.onDestroy = function () {
             self.$destroy();
-            eleNode = null;
-            custom = null;
+            element = null;
+            connection = null;
         };
     }
 
@@ -136,7 +136,7 @@ class RepeatDirective extends Directive {
                     template: self.itemTemplate
                 });
                 cmpItem[self.itemExp] = item;
-                cmpItem.$inherit(self.scope);
+                cmpItem.$inheritCmp(self.scope);
             }
 
             fragment.appendChild(cmpItem.$render(true));

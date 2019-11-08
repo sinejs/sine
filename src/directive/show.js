@@ -5,16 +5,21 @@ import { directive } from '../decorator/directive';
     namespace: 'sine',
     selector: 'n-show'
 })
-class ShowDirective extends Directive{
-    constructor(){
+class ShowDirective extends Directive {
+    constructor() {
         super();
     }
 
-    onInsert(ele, binding){
-        ele.style.display = binding.compute() ? 'initial' : 'none';
+    onInsert() {
+        this.show();
     }
 
-    onUpdate(ele, binding) {
-        this.onInsert(ele, binding);
+    onUpdate() {
+        this.show();
+    }
+
+    show() {
+        var value = this.$binding.compute();
+        this.$htmlElement.style.display = value ? 'initial' : 'none';
     }
 }

@@ -94,4 +94,40 @@ function queryElementUnloaded(ele, callback) {
     };
 }
 
-export { getChildNodes, clearChildNodes, replaceNode, removeNode, removeNodeBetween, insertNodeAfter, queryElementLoaded, queryElementUnloaded };
+function queryElementState(ele, callbacks) {
+    var cancelToken = false, loaded = false;
+
+    function query() {
+        if (cancelToken) {
+            return;
+        }
+
+        if (ele.clientWidth > 0 && ele.clientHeight > 0) {
+            if (!loaded) {
+                loaded = true;
+                if (callbacks.onLoad != null) {
+                    callbacks.onLoad.call(callbacks);
+                }
+            }
+        }
+        else {
+            if (loaded) {
+                loaded = false;
+                if (callbacks.onUnload != null) {
+                    callbacks.onUnload.call(callbacks);
+                }
+            }
+        }
+
+        requestAnimationFrame(query);
+    }
+
+    requestAnimationFrame(query);
+
+    return function () {
+        cancelToken = true;
+    };
+}
+
+
+export { getChildNodes, clearChildNodes, replaceNode, removeNode, removeNodeBetween, insertNodeAfter, queryElementLoaded, queryElementUnloaded, queryElementState };

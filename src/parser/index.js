@@ -45,24 +45,20 @@ function compile(html, options) {
     astNodes.forEach(function (astNode) {
         astNode.compile(settings);
     });
-
     astNodes.forEach(function (astNode) {
-        astNode.directives().forEach(function (directive) {
-            directive.$compile(settings);
-        });
+        astNode.notifyCompiled(settings);
     });
 
     return function (scope) {
         var fragment = document.createDocumentFragment();
 
-        scope.$$vnodes = astNodes;
+        scope.$$childElements = astNodes;
 
-        astNodes.forEach(function (node) {
-            fragment.appendChild(node.link(scope));
+        astNodes.forEach(function (astNode) {
+            fragment.appendChild(astNode.link(scope));
         });
-
-        astNodes.forEach(function (item) {
-            item.afterLink();
+        astNodes.forEach(function (astNode) {
+            astNode.notifyLinked();
         });
 
         return fragment;
@@ -74,6 +70,9 @@ function compute(exp, scope, options) {
     options.createFilter = function (name) {
         return injector.createFilter(name);
     };
+    if (options.collectMembers) {
+        options.members = [];
+    }
     return parseExp(exp).compile(scope, options);
 }
 

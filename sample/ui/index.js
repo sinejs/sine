@@ -18,11 +18,20 @@
                     {
                         title: 'User',
                         items: [
-                            {field: 'name', type: 'text', label: 'Name'},
+                            {
+                                field: 'name', type: 'text', label: 'Name', validator: function (value) {
+                                if (value.length > 10) {
+                                    return {
+                                        valid: false,
+                                        feedback: 'text length must less than 10.'
+                                    };
+                                }
+                            }
+                            },
                             {field: 'email', type: 'email', label: 'Email', help: 'Fill valid email address'},
                             {field: 'password', type: 'password', label: 'Password'}
-                        ],
-                        collapsed: true
+                        ]
+                        // collapsed: true
                     },
                     {
                         title: 'Other',
@@ -31,15 +40,28 @@
                         ]
                     }
                 ]
-            }
+            };
         },
         methods: {
-            onInit: function () {
-                this.$watch(this.entity, 'name', function () {
-
-                });
+            next: function () {
+                this.$proxy.entity = {
+                    name: 'sine2',
+                    email: '123456@sine.com',
+                    password: '12345678',
+                    description: 'this is description'
+                }
+            },
+            show: function () {
+                this.modalService.show('modal-content');
             }
+        },
+        inject: {
+            modalService: 'modalService'
         }
+    });
+
+    sine.namespace(app).component('modal-content', {
+        templateUrl: './modal.html'
     });
 
     global.onload = function(){

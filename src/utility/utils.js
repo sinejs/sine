@@ -339,6 +339,46 @@ function concat() {
     return Array.prototype.concat.apply([], arguments);
 }
 
+function orderBy(arr, getter) {
+    var getValue = function (item) {
+        if (getter == null) {
+            return item;
+        }
+
+        return getter(item);
+    };
+
+    return arr.sort(function (a, b) {
+        if (getValue(a) < getValue(b)) {
+            return -1;
+        }
+        if (getValue(a) > getValue(b)) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+function orderByDescending(arr, getter) {
+    var getValue = function (item) {
+        if (getter == null) {
+            return item;
+        }
+
+        return getter(item);
+    };
+
+    return arr.sort(function (a, b) {
+        if (getValue(a) < getValue(b)) {
+            return 1;
+        }
+        if (getValue(a) > getValue(b)) {
+            return -1;
+        }
+        return 0;
+    });
+}
+
 export {
     forEach,
     some,
@@ -367,5 +407,7 @@ export {
     hasProperty,
     getProperty,
     setProperty,
-    concat
+    concat,
+    orderBy,
+    orderByDescending
 };

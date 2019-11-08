@@ -1,5 +1,6 @@
 import * as utils from '../utility/utils';
 import {isFilter} from '../view';
+import {NullObject} from './null-object';
 
 var AST = {};
 AST.Program = 'Program';
@@ -32,13 +33,26 @@ AstNode.prototype.compile = function (scope, options, context) {
     });
 };
 
+// has condition or call expression
+AstNode.prototype.hasCC = function () {
+    return this.childNodes.some(function (child) {
+        return child.hasCC();
+    });
+};
+
 utils.inherit(ProgramNode, AstNode);
 function ProgramNode() {
     ProgramNode.super.call(this, AST.Program);
 }
 
 ProgramNode.prototype.compile = function (scope, options) {
-    return this.childNodes[0].compile(scope, options || {});
+    var result = this.childNodes[0].compile(scope, options || {});
+
+    if (result instanceof NullObject) {
+        return null;
+    }
+
+    return result;
 };
 
 ProgramNode.prototype.getMemberExpression = function () {
@@ -87,10 +101,15 @@ function ConditionalExpressionNode(test, alternate, consequent) {
 }
 
 ConditionalExpressionNode.prototype.compile = function (scope, options) {
-    if (this.test.compile(scope)) {
+    if (this.test.compile(scope, options)) {
         return this.alternate.compile(scope, options);
     }
     return this.consequent.compile(scope, options);
+};
+
+// has condition or call expression
+ConditionalExpressionNode.prototype.hasCC = function () {
+    return true;
 };
 
 utils.inherit(LogicalExpressionNode, AstNode);
@@ -213,6 +232,10 @@ LiteralNode.prototype.compile = function () {
     return this.value;
 };
 
+LiteralNode.prototype.toText = function () {
+    return this.value;
+};
+
 utils.inherit(CallExpressionNode, AstNode);
 function CallExpressionNode(callee, args) {
     CallExpressionNode.super.call(this, AST.CallExpression);
@@ -222,7 +245,7 @@ function CallExpressionNode(callee, args) {
 }
 
 CallExpressionNode.prototype.compile = function (scope, options) {
-    var context = this.callee.compile(scope, options, { callee: true });
+    var context = this.callee.compile(scope, options, {callee: true});
     var argValues = this.args.map(function (arg) {
         return arg.compile(scope, options);
     });
@@ -243,39 +266,58 @@ CallExpressionNode.prototype.compile = function (scope, options) {
     }
 };
 
+// has condition or call expression
+CallExpressionNode.prototype.hasCC = function () {
+    return !this.filter;
+};
+
 utils.inherit(MemberExpressionNode, AstNode);
 function MemberExpressionNode(object, property, computed) {
     MemberExpressionNode.super.call(this, AST.MemberExpression);
     this.object = object;
     this.property = property;
     this.computed = computed;
+    this.allowNull = false;
 }
 
 MemberExpressionNode.prototype.compile = function (scope, options, context) {
     var obj = this.object.compile(scope, options, context);
 
-    if (utils.isArray(obj)) {
-        return obj[this.property.compile(obj, options, context)];
+    if (obj == null && this.object.allowNull) {
+        obj = new NullObject();
     }
 
-    if(this.property instanceof MemberExpressionNode) {
-        return obj[this.property.compile(scope, options, context)]
+    if (this.computed) {
+        var prop = this.property.compile(scope, options, context);
+        if (utils.isArray(options.members)) {
+            options.members.push({
+                target: obj,
+                targetKey: this.object.toText(),
+                key: prop
+            });
+        }
+        return obj[prop];
     }
 
-    return this.property.compile(obj, options, context);
+    return this.property.compile(obj, options, context, this.object);
+};
+
+MemberExpressionNode.prototype.toText = function () {
+    return this.object.toText() + '.' + this.property.toText();
 };
 
 utils.inherit(IdentifierNode, AstNode);
 function IdentifierNode(name) {
     IdentifierNode.super.call(this, AST.Identifier);
     this.name = name;
+    this.allowNull = false;
 }
 
-IdentifierNode.prototype.compile = function (scope, options, context) {
+IdentifierNode.prototype.compile = function (obj, options, context, objNode) {
     if (context) {
         if (context.assignmentLeft || context.callee) {
             return {
-                obj: scope,
+                obj: obj,
                 prop: this.name
             };
         }
@@ -283,11 +325,26 @@ IdentifierNode.prototype.compile = function (scope, options, context) {
             return this.name;
         }
     }
-    var result = scope[this.name];
+
+    var result = obj[this.name];
+
+    if (utils.isArray(options.members)) {
+        options.members.push({
+            target: obj,
+            targetKey: objNode != null ? objNode.toText() : null,
+            key: this.name
+        });
+    }
+
     if (result == null && options.locals) {
         result = options.locals[this.name];
     }
+
     return result;
+};
+
+IdentifierNode.prototype.toText = function () {
+    return this.name;
 };
 
 utils.inherit(ArrayExpressionNode, AstNode);
@@ -491,6 +548,11 @@ Parser.prototype.primary = function () {
         this.throwError('not a primary expression', this.peek());
     }
 
+    if (this.peek('?')) {
+        primary.allowNull = true;
+        this.consume('?');
+    }
+
     var next;
     while ((next = this.expect('(', '[', '.'))) {
         if (next.text === '(') {
@@ -499,8 +561,16 @@ Parser.prototype.primary = function () {
         } else if (next.text === '[') {
             primary = new MemberExpressionNode(primary, this.expression(), true);
             this.consume(']');
+            if (this.peek('?')) {
+                primary.allowNull = true;
+                this.consume('?');
+            }
         } else if (next.text === '.') {
             primary = new MemberExpressionNode(primary, this.identifier(), false);
+            if (this.peek('?')) {
+                primary.allowNull = true;
+                this.consume('?');
+            }
         } else {
             this.throwError('IMPOSSIBLE');
         }

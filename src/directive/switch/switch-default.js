@@ -10,19 +10,18 @@ class SwitchDefaultDirective extends Directive {
     constructor() {
         super();
         this.isMatch = false;
-        this.attrNode = null;
-        this.comment = null;
+        this.htmlComment = null;
         this.switchWhenDirs = [];
     }
 
     initSwitchWhenDirs() {
-        var vEle = this.attrNode.ownerVElement;
+        var vEle = this.$element;
 
         while (vEle.previousSibling != null) {
-            var whenDirs = vEle.previousSibling.getDirective('n-switch-when');
+            var whenDir = vEle.previousSibling.getDirective('n-switch-when');
 
-            if (whenDirs.length) {
-                this.switchWhenDirs.push(whenDirs[0]);
+            if (whenDir != null) {
+                this.switchWhenDirs.push(whenDir);
             }
 
             vEle = vEle.previousSibling;
@@ -35,50 +34,45 @@ class SwitchDefaultDirective extends Directive {
         });
     }
 
-    onCompile(attrNode, options) {
-        this.attrNode = attrNode;
-    }
-
-    onInsert(ele, binding) {
+    onInsert() {
         var self = this;
 
         this.initSwitchWhenDirs();
         this.isMatch = this.match();
-        this.comment = document.createComment('n-switch-default');
+        this.htmlComment = document.createComment('n-switch-default');
 
         if (!this.isMatch) {
-            utils.replaceNode(ele, this.comment);
+            utils.replaceNode(this.$htmlElement, this.htmlComment);
         }
 
         this.switchWhenDirs.forEach(function (item) {
             item.isMatchChanged.on(function () {
-                self.update(ele, binding);
+                self.update();
             })
         });
     }
 
-    update(ele, binding) {
+    update() {
         var oldValue = this.isMatch, newValue = this.match();
 
         if (newValue !== oldValue) {
             this.isMatch = newValue;
 
             if (this.isMatch) {
-                if (ele.parentNode == null) {
-                    utils.replaceNode(this.comment, ele);
+                if (this.$htmlElement.parentNode == null) {
+                    utils.replaceNode(this.htmlComment, this.$htmlElement);
                 }
             }
             else {
-                if (ele.parentNode != null) {
-                    utils.replaceNode(ele, this.comment);
+                if (this.$htmlElement.parentNode != null) {
+                    utils.replaceNode(this.$htmlElement, this.htmlComment);
                 }
             }
         }
     }
 
     onDestroy() {
-        this.attrNode = null;
-        this.comment = null;
+        this.htmlComment = null;
         this.switchWhenDirs = null;
     }
 }

@@ -1,14 +1,13 @@
 import { isMessenger } from '../utility';
 import * as utils from '../utility/utils';
 import * as eleUtils from '../utility/ele-utils';
-import { SetPropertyHandler } from '../utility/handler';
-import { ObjectPropertyChangeSubject } from '../utility/subject';
-import { injector } from './injector';
+import { Observer } from '../core/observer';
 import { compile, compute } from '../parser';
+import { injector } from './injector';
 
 export class Component {
-    get proxy() {
-        return new Proxy(this, new SetPropertyHandler(true));
+    get $proxy() {
+        return this.toProxy();
     }
 
     constructor(meta) {
@@ -16,13 +15,14 @@ export class Component {
     }
 
     static construct(meta) {
-        this.$$vnodes = null;
-        this.$$ownerVNode = null;
+        this.$$element = null;
+        this.$$childElements = null;
         this.$$parentComponent = null;
         this.$$childComponents = [];
         this.$$childDirectives = [];
         this.$$detectTimeout = null;
-        this.$$propChanged = new ObjectPropertyChangeSubject();
+        this.$$observer = new Observer();
+        this.$$disposers = [];
 
         if (meta != null) {
             this.$setMeta(meta);
@@ -49,8 +49,8 @@ export class Component {
         this.$$meta = value;
     }
 
-    $bindVNode(vnode) {
-        this.$$ownerVNode = vnode;
+    $bindNode(node) {
+        this.$$element = node;
     }
 
     $hasAttr(prop) {
@@ -84,7 +84,7 @@ export class Component {
             this.beforeAttrChange.call(this, prop, value, oldValue);
         }
 
-        utils.setProperty(this.proxy, prop, value, true);
+        utils.setProperty(this.$proxy, prop, value, true);
 
         if (utils.isFunction(this.afterAttrChange)) {
             this.afterAttrChange.call(this, prop, value, oldValue);
@@ -145,7 +145,7 @@ export class Component {
         var self = this;
         return {
             getEmbedTpl: function () {
-                return this.$$ownerVNode.getInnerTpl();
+                return self.$$element.getInnerTpl();
             },
             containsComponent: function (name) {
                 return injector.containsComponent(self.$using(name));
@@ -162,36 +162,36 @@ export class Component {
         };
     }
 
-    $hasVNodes() {
-        return utils.isArray(this.$$vnodes);
+    $hasView() {
+        return utils.isArray(this.$$childElements);
     }
 
-    $fromVNodes() {
+    $showView() {
         var fragment = document.createDocumentFragment();
 
-        this.$$vnodes.forEach(function (vnode) {
-            fragment.appendChild(vnode.getDomElement());
+        this.$$childElements.forEach(function (child) {
+            fragment.appendChild(child.getHtmlElement());
         });
 
         return fragment;
     }
 
-    $clearVNodes() {
-        if (!this.$hasVNodes()) {
+    $clearView() {
+        if (!this.$hasView()) {
             return;
         }
-        this.$$vnodes.forEach(function (vnode) {
-            vnode.destroy();
+        this.$$childElements.forEach(function (child) {
+            child.destroy();
         });
-        this.$$vnodes = null;
+        this.$$childElements = null;
     }
 
     $render(sync) {
         var self = this, fragment = null;
 
         if (sync) {
-            if (this.$hasVNodes()) {
-                fragment = this.$fromVNodes();
+            if (this.$hasView()) {
+                fragment = this.$showView();
             }
             else {
                 fragment = compile(this.$getTemplate(sync), this.$makeCompileOptions())(this);
@@ -201,8 +201,8 @@ export class Component {
         }
 
         return new Promise(function (resolve) {
-            if (self.$hasVNodes()) {
-                resolve(self.$fromVNodes());
+            if (self.$hasView()) {
+                resolve(self.$showView());
             }
             else {
                 self.$getTemplate().then(function (html) {
@@ -214,12 +214,12 @@ export class Component {
     }
 
     $refresh(sync) {
-        this.$clearVNodes();
+        this.$clearView();
         return this.$render(sync);
     }
 
-    $mount(selectorOrElement, sync) {
-        var self = this, element;
+    $mount(selectorOrElement, options) {
+        var self = this, element, options = options || {};
 
         if (utils.isString(selectorOrElement)) {
             element = document.querySelector(selectorOrElement);
@@ -228,17 +228,36 @@ export class Component {
             element = selectorOrElement;
         }
 
-        eleUtils.clearChildNodes(element);
+        if (!options.append) {
+            eleUtils.clearChildNodes(element);
+        }
 
-        if (sync) {
-            element.appendChild(this.$render(sync));
+        if (options.sync) {
+            element.appendChild(this.$render(options.sync));
             self.$afterViewMount();
         }
         else {
-            this.$render(sync).then(function (ele) {
+            this.$render(options.sync).then(function (ele) {
                 element.appendChild(ele);
                 self.$afterViewMount();
             });
+        }
+    }
+
+    $unmount() {
+        if (this.$$element != null) {
+            this.$$element.$remove();
+            this.$$element.removeHtmlElement();
+        }
+        else if (this.$hasView()) {
+            this.$$childElements.forEach(function (child) {
+                child.removeHtmlElement();
+            });
+        }
+
+        if (this.$$parentComponent != null) {
+            this.$$parentComponent.$removeChildCmp(this);
+            this.$$parentComponent = null;
         }
     }
 
@@ -248,33 +267,16 @@ export class Component {
         }
     }
 
-    $unmount() {
-        if (this.$$ownerVNode != null) {
-            this.$$ownerVNode.$remove();
-            this.$$ownerVNode.removeDomElement();
-        }
-        else if (this.$hasVNodes()) {
-            this.$$vnodes.forEach(function (vnode) {
-                vnode.removeDomElement();
-            });
-        }
-
-        if (this.$$parentComponent != null) {
-            this.$$parentComponent.$removeChild(this);
-            this.$$parentComponent = null;
-        }
-    }
-
     $detect() {
-        if (this.$$detectTimeout || !this.$$vnodes) {
+        if (this.$$detectTimeout || !this.$$childElements) {
             return;
         }
 
         var self = this;
         self.$$detectTimeout = setTimeout(function () {
             self.$$detectTimeout = null;
-            self.$$vnodes.forEach(function (vnode) {
-                vnode.detect();
+            self.$$childElements.forEach(function (child) {
+                child.detect();
             });
         });
     }
@@ -296,13 +298,7 @@ export class Component {
             throw new Error('arguments error');
         }
 
-        this.$$propChanged.on(obj, prop, action, {
-            beforeChanged: true
-        });
-
-        return function () {
-            self.$$propChanged.off(obj, prop, action);
-        };
+        return this.$$observer.validate(obj, prop, action);
     }
 
     $watch() {
@@ -322,71 +318,34 @@ export class Component {
             throw new Error('arguments error');
         }
 
-        this.$$propChanged.on(obj, prop, action);
-
-        return function () {
-            self.$$propChanged.off(obj, prop, action);
-        };
-    }
-
-    $removeChild(child) {
-        var index = this.$$childComponents.indexOf(child);
-
-        if (index !== -1) {
-            this.$$childComponents.splice(index, 1);
-            child.$$parentComponent = null;
-        }
-    }
-
-    $dispose(isFromVNode) {
-        // remove virtual node first in case it triggers parent component destroy
-        this.$unmount();
-
-        if (utils.isFunction(this.onDestroy)) {
-            this.onDestroy.call(this);
-        }
-
-        if (this.$$detectTimeout) {
-            clearTimeout(this.$$detectTimeout);
-        }
-
-        this.$clearVNodes();
-        this.$$propChanged.destroy();
-
-        if (isFromVNode) {
-            this.$$ownerVNode = null;
-        }
-
-        this.$$childComponents = null;
-        this.$$childDirectives = null;
-    }
-
-    $destroy() {
-        this.$dispose();
-
-        // destroy virtual node in the end because it may binds logic about destroy
-        if (this.$$ownerVNode != null) {
-            this.$$ownerVNode.dispose(true);
-            this.$$ownerVNode = null;
-        }
-    }
-
-    $getParent() {
-        return this.$$parentComponent;
-    }
-
-    $createComponent(constructor) {
-        var component = injector.createComponent(constructor);
-        this.$$childComponents.push(component);
-        component.$$parentComponent = this;
-        return component;
+        return this.$$observer.watch(obj, prop, action);
     }
 
     $eval(exp) {
         return compute(exp, this);
     }
 
-    $inherit(parentCmp) {
+    $getParentCmp() {
+        return this.$$parentComponent;
+    }
+
+    $removeChildCmp(childCmp) {
+        var index = this.$$childComponents.indexOf(childCmp);
+
+        if (index !== -1) {
+            this.$$childComponents.splice(index, 1);
+            childCmp.$$parentComponent = null;
+        }
+    }
+
+    $createChildCmp(childCmp) {
+        var component = injector.createComponent(childCmp);
+        this.$$childComponents.push(component);
+        component.$$parentComponent = this;
+        return component;
+    }
+
+    $inheritCmp(parentCmp) {
         var self = this;
 
         Object.setPrototypeOf(self, utils.object(parentCmp));
@@ -399,13 +358,50 @@ export class Component {
                 };
             }
         });
+
+        this.$$disposers.push(parentCmp.$validate('*', function (prop, args) {
+            self.$$observer.fireChanging(self, prop, args);
+        }));
+
+        this.$$disposers.push(parentCmp.$watch('*', function (prop, args) {
+            self.$$observer.fireChanged(self, prop, args);
+        }));
     }
 
-    $proxy(data) {
-        if (utils.isObject(data)) {
-            return new Proxy(data, new SetPropertyHandler(true));
+    $dispose(destroyFromElement) {
+        // remove virtual node first in case it triggers parent component destroy
+        this.$unmount();
+
+        if (utils.isFunction(this.onDestroy)) {
+            this.onDestroy.call(this);
         }
 
-        return data;
+        if (this.$$detectTimeout) {
+            clearTimeout(this.$$detectTimeout);
+        }
+
+        this.$$disposers.forEach(function (disposer) {
+            disposer.call();
+        });
+
+        this.$clearView();
+        this.$$observer.destroy();
+
+        if (destroyFromElement) {
+            this.$$element = null;
+        }
+
+        this.$$childComponents = null;
+        this.$$childDirectives = null;
+    }
+
+    $destroy() {
+        this.$dispose();
+
+        // destroy virtual node in the end because it may binds logic about destroy
+        if (this.$$element != null) {
+            this.$$element.dispose(true);
+            this.$$element = null;
+        }
     }
 }

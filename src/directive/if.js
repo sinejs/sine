@@ -9,30 +9,31 @@ import * as utils from '../utility';
 class IfDirective extends Directive {
     constructor() {
         super();
-        this.comment = null;
+        this.htmlComment = null;
     }
 
-    onInsert(ele, binding) {
-        this.comment = document.createComment('n-if');
-        if (!binding.compute()) {
-            utils.replaceNode(ele, this.comment);
+    onInsert() {
+        this.htmlComment = document.createComment('n-if');
+
+        if (!this.$binding.compute()) {
+            utils.replaceNode(this.$htmlElement, this.htmlComment);
         }
     }
 
-    onUpdate(ele, binding) {
-        if (binding.compute()) {
-            if (ele.parentNode == null) {
-                utils.replaceNode(this.comment, ele);
+    onUpdate() {
+        if (this.$binding.compute()) {
+            if (this.$htmlElement.parentNode == null) {
+                utils.replaceNode(this.htmlComment, this.$htmlElement);
             }
         }
         else {
-            if (ele.parentNode != null) {
-                utils.replaceNode(ele, this.comment);
+            if (this.$htmlElement.parentNode != null) {
+                utils.replaceNode(this.$htmlElement, this.htmlComment);
             }
         }
     }
 
     onDestroy() {
-        this.comment = null;
+        this.htmlComment = null;
     }
 }

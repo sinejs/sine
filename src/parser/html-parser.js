@@ -195,7 +195,7 @@ HtmlParser.prototype.attrs = function (p) {
 
         if (token.identifier) {
             attr.nodeName = token.text;
-            attr.orgNodeName = token.text;
+            attr.origin = token.text;
             this.next();
             token = this.current();
             if (token.equal) {
