@@ -10,8 +10,16 @@ import template from './modal.html';
 class ModalComponent extends Component {
     constructor() {
         super();
+        var self = this;
         this.visible = false;
-        this.viewConfig = null;
+        this.currentCmp = null;
+        this.cmpConfig = {
+            onInit: function (view) {
+                view.$close = function () {
+                    self.close();
+                };
+            }
+        };
     }
 
     onDestroy() {
@@ -19,17 +27,8 @@ class ModalComponent extends Component {
     }
 
     show(cmp) {
-        var self = this;
-
         this.visible = true;
-        this.viewConfig = {
-            component: cmp,
-            onInit: function (view) {
-                view.$close = function () {
-                    self.close();
-                };
-            }
-        };
+        this.currentCmp = cmp;
         this.$mount(document.body, {
             append: true
         });
@@ -37,11 +36,11 @@ class ModalComponent extends Component {
 
     close() {
         var self = this,
-            modalShow = this.rootElement.getDirective('n-modal-fade');
+            animation = this.rootElement.getDirective('animation-modal');
 
         this.$proxy.visible = false;
 
-        modalShow.unload.on(function () {
+        animation.left.on(function () {
             self.$destroy();
         });
     }

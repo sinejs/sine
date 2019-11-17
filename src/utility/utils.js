@@ -5,7 +5,7 @@ var debugMode = true,
 function forEach(obj, action, ignoreOwn) {
     if (isArray(obj)) {
         for (var index = 0; index < obj.length; index++) {
-            if (action(index, obj[index])) {
+            if (action(obj[index], index)) {
                 return;
             }
         }
@@ -13,7 +13,7 @@ function forEach(obj, action, ignoreOwn) {
     else if (isObject(obj)) {
         for (var p in obj) {
             if (ignoreOwn || obj.hasOwnProperty(p)) {
-                if (action(p, obj[p])) {
+                if (action(obj[p], p)) {
                     return;
                 }
             }
@@ -71,7 +71,7 @@ function copy() {
 
     if (isObject(obj)) {
         var newObj = object(obj);
-        forEach(obj, function (key, value) {
+        forEach(obj, function (value, key) {
             if (filter == null || filter(obj, key, value)) {
                 newObj[key] = deep ? copy(value) : value;
             }
@@ -125,13 +125,13 @@ function merge() {
 }
 
 function plainMerge(target, source) {
-    forEach(source, function (key, value) {
+    forEach(source, function (value, key) {
         target[key] = value;
     });
 }
 
 function deepMerge(target, source) {
-    forEach(source, function (key, value) {
+    forEach(source, function (value, key) {
         if (target[key] == null) {
             target[key] = value;
         }
@@ -223,6 +223,10 @@ function isBoolean(value) {
     return typeof value === 'boolean';
 }
 
+function isFormData(value) {
+    return (typeof FormData !== 'undefined') && (value instanceof FormData);
+}
+
 function isSame(obj1, obj2) {
     var same = (obj1 === obj2);
 
@@ -272,7 +276,7 @@ function hasProperty(obj, key, ignoreCase) {
     while (hasProp && keys.length > 0) {
         key2 = keys.shift();
         hasProp = false;
-        forEach(target, function (key3, value3) {
+        forEach(target, function (value3, key3) {
             hasProp = (key3 === key2 || (ignoreCase && lowercase(key3) === lowercase(key2)));
             if (hasProp) {
                 target = value3;
@@ -294,7 +298,7 @@ function getProperty(obj, key, ignoreCase) {
     while (hasProp && keys.length > 0) {
         key2 = keys.shift();
         hasProp = false;
-        forEach(target, function (key3, value3) {
+        forEach(target, function (value3, key3) {
             hasProp = (key3 === key2 || (ignoreCase && lowercase(key3) === lowercase(key2)));
             if (hasProp) {
                 target = value3;
@@ -320,7 +324,7 @@ function setProperty(obj, key, value, ignoreCase) {
         }
         else {
             hasProp = false;
-            forEach(target, function (key3, value3) {
+            forEach(target, function (value3, key3) {
                 hasProp = (key3 === key2 || (ignoreCase && lowercase(key3) === lowercase(key2)));
                 if (hasProp) {
                     target = value3;
@@ -379,6 +383,20 @@ function orderByDescending(arr, getter) {
     });
 }
 
+function toNumber (value) {
+    var n = parseFloat(value);
+    return isNaN(n) ? value : n;
+}
+
+function remove (arr, item) {
+    if (arr.length) {
+        var index = arr.indexOf(item);
+        if (index > -1) {
+            return arr.splice(index, 1);
+        }
+    }
+}
+
 export {
     forEach,
     some,
@@ -401,6 +419,7 @@ export {
     isArray,
     isString,
     isSame,
+    isFormData,
     debug,
     contains,
     containsStr,
@@ -409,5 +428,7 @@ export {
     setProperty,
     concat,
     orderBy,
-    orderByDescending
+    orderByDescending,
+    toNumber,
+    remove
 };

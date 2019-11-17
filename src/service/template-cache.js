@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { httpGet } from '../utility/http';
 import { Service } from '../view/service';
 import { service } from '../decorator/service';
 
@@ -23,7 +23,7 @@ class TemplateCacheService extends Service {
         }
 
         if (!this.promiseCache[url]) {
-            this.promiseCache[url] = axios.get(url).then(function (res) {
+            this.promiseCache[url] = httpGet(url).then(function (res) {
                 self.promiseCache[url] = null;
                 self.tplCache[url] = res.data || '';
                 return self.tplCache[url];

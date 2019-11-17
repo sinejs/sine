@@ -16,7 +16,7 @@ class BindCmpDirective extends Directive {
     }
 
     onInsert() {
-        this.nameDir = this.$element.getDirective('n-name');
+        this.init();
         this.render();
     }
 
@@ -30,6 +30,18 @@ class BindCmpDirective extends Directive {
         this.nameDir = null;
     }
 
+    init() {
+        this.nameDir = this.$element.getDirective('n-name');
+        this.bindCmpOptionsDir = this.$element.getDirective('n-bind-cmp-options');
+
+        if (this.bindCmpOptionsDir != null) {
+            this.config = this.bindCmpOptionsDir.value;
+        }
+        else {
+            this.config = {};
+        }
+    }
+
     clear() {
         if (this.view != null) {
             this.view.$destroy();
@@ -38,19 +50,14 @@ class BindCmpDirective extends Directive {
     }
 
     render() {
-        this.config = this.$binding.compute();
+        var component = this.$binding.compute();
 
-        if(utils.isObject(this.config)) {
-            this.view = this.$binding.scope.$createChildCmp(this.config.component);
-
-            if(this.config.onInit != null) {
-                this.config.onInit.call(this, this.view);
-            }
-        }
-        else{
-            this.view = this.$binding.scope.$createChildCmp(this.config);
+        if (component == null) {
+            return;
         }
 
+        this.view = this.$binding.scope.$createChildCmp(component);
+        this.config && this.config.onInit(this.view);
         this.view.$mount(this.$htmlElement);
 
         if (this.nameDir != null) {

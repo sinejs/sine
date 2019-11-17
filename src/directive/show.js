@@ -3,7 +3,10 @@ import { directive } from '../decorator/directive';
 
 @directive({
     namespace: 'sine',
-    selector: 'n-show'
+    selector: 'n-show',
+    inject: {
+        $animate: '$animate'
+    }
 })
 class ShowDirective extends Directive {
     constructor() {
@@ -11,15 +14,25 @@ class ShowDirective extends Directive {
     }
 
     onInsert() {
-        this.show();
+        this.toggle();
     }
 
     onUpdate() {
-        this.show();
+        this.toggle();
     }
 
-    show() {
-        var value = this.$binding.compute();
-        this.$htmlElement.style.display = value ? 'initial' : 'none';
+    toggle() {
+        var self = this;
+
+        if (this.$binding.compute()) {
+            this.$animate.enter(this.$element, function () {
+                self.$htmlElement.style.display = 'initial';
+            });
+        }
+        else {
+            this.$animate.leave(this.$element, function () {
+                self.$htmlElement.style.display = 'none';
+            });
+        }
     }
 }

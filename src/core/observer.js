@@ -401,7 +401,7 @@ class Watcher {
                 changeKey = member.targetKey + '.' + prop;
             }
 
-            forEach(self.members, function (key, memberWatcher) {
+            forEach(self.members, function (memberWatcher, key) {
                 memberWatcher.update(changeKey);
             });
 
@@ -411,7 +411,7 @@ class Watcher {
     }
 
     destroy() {
-        forEach(this.members, function (key, member) {
+        forEach(this.members, function (member, key) {
             member.destroy();
         });
         this.digests.forEach(function (digest) {

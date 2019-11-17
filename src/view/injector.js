@@ -385,7 +385,7 @@ class Injector {
         var self = this, meta = instance.$getMeta();
 
         if (utils.isObject(meta.inject)) {
-            utils.forEach(meta.inject, function (key, value) {
+            utils.forEach(meta.inject, function (value, key) {
                 Object.defineProperty(instance, key, {
                     enumerable: false,
                     configurable: false,

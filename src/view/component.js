@@ -1,6 +1,4 @@
-import { isMessenger } from '../utility';
-import * as utils from '../utility/utils';
-import * as eleUtils from '../utility/ele-utils';
+import * as utils from '../utility';
 import { Observer } from '../core/observer';
 import { compile, compute } from '../parser';
 import { injector } from './injector';
@@ -36,6 +34,7 @@ export class Component {
             beforeAttrChange: '',
             afterAttrChange: '',
             onInit: '',
+            beforeViewInit: '',
             afterViewMount: '',
             onDestroy: ''
         };
@@ -93,7 +92,7 @@ export class Component {
 
     $listen(e, fn) {
         var messenger = utils.getProperty(this, e, true);
-        if (isMessenger(messenger)) {
+        if (utils.isMessenger(messenger)) {
             messenger.on(fn);
             return;
         }
@@ -229,7 +228,7 @@ export class Component {
         }
 
         if (!options.append) {
-            eleUtils.clearChildNodes(element);
+            utils.clearChildNodes(element);
         }
 
         if (options.sync) {
@@ -351,7 +350,7 @@ export class Component {
         Object.setPrototypeOf(self, utils.object(parentCmp));
 
         // todo - resolve issue calling parent component's lifecycle hooks
-        utils.forEach(self.$hooks(), function (hook) {
+        utils.forEach(self.$hooks(), function (handler, hook) {
             if (self.hasOwnProperty(hook) == null) {
                 self[hook] = function () {
 

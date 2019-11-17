@@ -3,7 +3,10 @@ import { directive } from '../decorator/directive';
 
 @directive({
     namespace: 'sine',
-    selector: 'n-hide'
+    selector: 'n-hide',
+    inject: {
+            $animate: '$animate'
+    }
 })
 class HideDirective extends Directive {
     constructor() {
@@ -11,15 +14,25 @@ class HideDirective extends Directive {
     }
 
     onInsert() {
-        this.hide();
+        this.toggle();
     }
 
     onUpdate() {
-        this.hide();
+        this.toggle();
     }
 
-    hide() {
-        var value = this.$binding.compute();
-        this.$htmlElement.style.display = value ? 'none' : 'initial';
+    toggle() {
+        var self = this;
+
+        if (this.$binding.compute()) {
+            this.$animate.leave(this.$element, function () {
+                self.$htmlElement.style.display = 'none';
+            });
+        }
+        else {
+            this.$animate.enter(this.$element, function () {
+                self.$htmlElement.style.display = 'initial';
+            });
+        }
     }
 }

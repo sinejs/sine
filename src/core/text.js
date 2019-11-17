@@ -1,5 +1,4 @@
-import * as utils from '../utility/utils';
-import * as eleUtils from '../utility/ele-utils';
+import * as utils from '../utility';
 import { VNodeType, VNode } from './base';
 import { Binding } from './binding';
 
@@ -19,7 +18,7 @@ class TextNode extends VNode {
 
         this.binding.setScope(scope);
 
-        this.binding.onchange(function () {
+        this.binding.observe(function () {
             self.update();
         });
 
@@ -31,7 +30,7 @@ class TextNode extends VNode {
     }
 
     update() {
-        eleUtils.replaceNode(this.htmlElement, this.render(this.binding.value));
+        utils.replaceNode(this.htmlElement, this.render(this.binding.value));
     }
 
     render(value) {
@@ -45,6 +44,12 @@ class TextNode extends VNode {
 
     getInnerTpl() {
         return this.nodeValue;
+    }
+
+    removeHtmlElement() {
+        if (this.htmlElement != null) {
+            utils.removeNode(this.htmlElement);
+        }
     }
 
     destroy() {

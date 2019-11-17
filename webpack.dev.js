@@ -1,45 +1,6 @@
-const path = require('path');
+var common = require('./webpack.common');
 
-module.exports = {
+module.exports = common.extend({}, common.config, {
   mode: 'development',
-  devtool: 'inline-source-map',
-  entry: './src/index.js',
-  output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'sine.js',
-    library: 'sine',
-    libraryTarget: 'umd'
-  },
-  externals: {
-    axios: {
-      commonjs: 'axios',
-      commonjs2: 'axios',
-      amd: 'axios',
-      root: 'axios'
-    }
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env'],
-            "plugins": [
-              ["@babel/plugin-proposal-decorators", { "legacy": true }],
-              ["@babel/plugin-proposal-class-properties", { "loose": true }]
-            ]
-          }
-        }
-      },
-      // Support for CSS as raw text
-      { test: /\.css$/, use: 'raw-loader' },
-
-      // support for .html as raw text
-      { test: /\.html$/, use: 'raw-loader' }
-    ]
-  }
-};
+  devtool: 'inline-source-map'
+});

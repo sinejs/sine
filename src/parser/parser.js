@@ -27,9 +27,9 @@ AstNode.prototype.appendChild = function (child) {
     this.childNodes.push(child);
 };
 
-AstNode.prototype.compile = function (scope, options, context) {
+AstNode.prototype.compute = function (scope, options, context) {
     return this.childNodes.map(function (child) {
-        return child.compile(scope, options || {}, context);
+        return child.compute(scope, options || {}, context);
     });
 };
 
@@ -45,8 +45,8 @@ function ProgramNode() {
     ProgramNode.super.call(this, AST.Program);
 }
 
-ProgramNode.prototype.compile = function (scope, options) {
-    var result = this.childNodes[0].compile(scope, options || {});
+ProgramNode.prototype.compute = function (scope, options) {
+    var result = this.childNodes[0].compute(scope, options || {});
 
     if (result instanceof NullObject) {
         return null;
@@ -64,8 +64,8 @@ function ExpressionStatementNode() {
     ExpressionStatementNode.super.call(this, AST.ExpressionStatement);
 }
 
-ExpressionStatementNode.prototype.compile = function (scope, options, context) {
-    return this.childNodes[0].compile(scope, options || {}, context);
+ExpressionStatementNode.prototype.compute = function (scope, options, context) {
+    return this.childNodes[0].compute(scope, options || {}, context);
 };
 
 ExpressionStatementNode.prototype.getMemberExpression = function () {
@@ -86,9 +86,9 @@ function AssignmentExpressionNode(left, right, operator) {
     this.operator = operator;
 }
 
-AssignmentExpressionNode.prototype.compile = function (scope, options) {
-    var target = this.left.compile(scope, options, { assignmentLeft: true });
-    var value = this.right.compile(scope, options);
+AssignmentExpressionNode.prototype.compute = function (scope, options) {
+    var target = this.left.compute(scope, options, { assignmentLeft: true });
+    var value = this.right.compute(scope, options);
     target.obj[target.prop] = value;
 };
 
@@ -100,11 +100,11 @@ function ConditionalExpressionNode(test, alternate, consequent) {
     this.consequent = consequent;
 }
 
-ConditionalExpressionNode.prototype.compile = function (scope, options) {
-    if (this.test.compile(scope, options)) {
-        return this.alternate.compile(scope, options);
+ConditionalExpressionNode.prototype.compute = function (scope, options) {
+    if (this.test.compute(scope, options)) {
+        return this.alternate.compute(scope, options);
     }
-    return this.consequent.compile(scope, options);
+    return this.consequent.compute(scope, options);
 };
 
 // has condition or call expression
@@ -120,10 +120,10 @@ function LogicalExpressionNode(operator, left, right) {
     this.right = right;
 }
 
-LogicalExpressionNode.prototype.compile = function (scope, options) {
+LogicalExpressionNode.prototype.compute = function (scope, options) {
     var result;
-    var leftValue = this.left.compile(scope, options);
-    var rightValue = this.right.compile(scope, options);
+    var leftValue = this.left.compute(scope, options);
+    var rightValue = this.right.compute(scope, options);
 
     switch (this.operator) {
         case '&&':
@@ -145,10 +145,10 @@ function BinaryExpressionNode(operator, left, right) {
     this.right = right;
 }
 
-BinaryExpressionNode.prototype.compile = function (scope, options) {
+BinaryExpressionNode.prototype.compute = function (scope, options) {
     var result;
-    var leftValue = this.left.compile(scope, options);
-    var rightValue = this.right.compile(scope, options);
+    var leftValue = this.left.compute(scope, options);
+    var rightValue = this.right.compute(scope, options);
 
     // '+', '-', '*', '/', '%', '<', '>', '<=', '>=', '==', '!=', '===', '!=='
     switch (this.operator) {
@@ -204,8 +204,8 @@ function UnaryExpressionNode(operator, arg) {
     this.arg = arg;
 }
 
-UnaryExpressionNode.prototype.compile = function (scope, options) {
-    var result, value = this.arg.compile(scope, options);
+UnaryExpressionNode.prototype.compute = function (scope, options) {
+    var result, value = this.arg.compute(scope, options);
 
     switch (this.operator) {
         case '+':
@@ -228,7 +228,7 @@ function LiteralNode(value) {
     this.value = value;
 }
 
-LiteralNode.prototype.compile = function () {
+LiteralNode.prototype.compute = function () {
     return this.value;
 };
 
@@ -244,10 +244,10 @@ function CallExpressionNode(callee, args) {
     this.filter = false;
 }
 
-CallExpressionNode.prototype.compile = function (scope, options) {
-    var context = this.callee.compile(scope, options, {callee: true});
+CallExpressionNode.prototype.compute = function (scope, options) {
+    var context = this.callee.compute(scope, options, {callee: true});
     var argValues = this.args.map(function (arg) {
-        return arg.compile(scope, options);
+        return arg.compute(scope, options);
     });
 
     if (this.filter) {
@@ -280,15 +280,15 @@ function MemberExpressionNode(object, property, computed) {
     this.allowNull = false;
 }
 
-MemberExpressionNode.prototype.compile = function (scope, options, context) {
-    var obj = this.object.compile(scope, options, context);
+MemberExpressionNode.prototype.compute = function (scope, options, context) {
+    var obj = this.object.compute(scope, options, context);
 
     if (obj == null && this.object.allowNull) {
         obj = new NullObject();
     }
 
     if (this.computed) {
-        var prop = this.property.compile(scope, options, context);
+        var prop = this.property.compute(scope, options, context);
         if (utils.isArray(options.members)) {
             options.members.push({
                 target: obj,
@@ -299,7 +299,7 @@ MemberExpressionNode.prototype.compile = function (scope, options, context) {
         return obj[prop];
     }
 
-    return this.property.compile(obj, options, context, this.object);
+    return this.property.compute(obj, options, context, this.object);
 };
 
 MemberExpressionNode.prototype.toText = function () {
@@ -313,7 +313,7 @@ function IdentifierNode(name) {
     this.allowNull = false;
 }
 
-IdentifierNode.prototype.compile = function (obj, options, context, objNode) {
+IdentifierNode.prototype.compute = function (obj, options, context, objNode) {
     if (context) {
         if (context.assignmentLeft || context.callee) {
             return {
@@ -361,10 +361,10 @@ function PropertyNode() {
     this.computed = false;
 }
 
-PropertyNode.prototype.compile = function (scope, options) {
+PropertyNode.prototype.compute = function (scope, options) {
     return {
-        key: this.key.compile(scope, options, { propertyKey: true }),
-        value: this.value.compile(scope, options)
+        key: this.key.compute(scope, options, { propertyKey: true }),
+        value: this.value.compute(scope, options)
     };
 };
 
@@ -374,11 +374,11 @@ function ObjectExpressionNode(properties) {
     this.properties = properties;
 }
 
-ObjectExpressionNode.prototype.compile = function (scope, options) {
+ObjectExpressionNode.prototype.compute = function (scope, options) {
     var result = {};
 
     this.properties.forEach(function (item) {
-        var def = item.compile(scope, options);
+        var def = item.compute(scope, options);
         result[def.key] = def.value;
     });
 
@@ -542,15 +542,14 @@ Parser.prototype.primary = function () {
         primary = new LiteralNode(this.options.literals[this.consume().text]);
     } else if (this.peek().identifier) {
         primary = this.identifier();
+        if (this.peek('?')) {
+            primary.allowNull = true;
+            this.consume('?');
+        }
     } else if (this.peek().constant) {
         primary = this.constant();
     } else {
         this.throwError('not a primary expression', this.peek());
-    }
-
-    if (this.peek('?')) {
-        primary.allowNull = true;
-        this.consume('?');
     }
 
     var next;

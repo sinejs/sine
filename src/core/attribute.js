@@ -55,6 +55,10 @@ class AttrNode extends VNode {
         this.compile(this.options);
     }
 
+    observe(action) {
+        this.binding.observe(action);
+    }
+
     compile(options) {
         this.isEvent = this.nodeName.startsWith('@');
         this.isBinding = this.nodeName.startsWith(':');
@@ -134,7 +138,7 @@ class AttrNode extends VNode {
                 }
             }
 
-            this.binding.onchange(function () {
+            this.observe(function () {
                 self.update();
             });
         }

@@ -1,9 +1,8 @@
-import * as eleUtils from '../utility/ele-utils';
+import * as utils from '../utility';
 import { VNodeType, VNode } from './base';
 import { ConnectionNode } from './connection';
 import { AttrNode } from './attribute';
 import { parse } from '../parser';
-import { orderBy } from '../utility/utils';
 
 class ElementNode extends VNode {
     get parentElement() {
@@ -27,6 +26,18 @@ class ElementNode extends VNode {
 
     hasAttributes() {
         return this.attributes.length !== 0;
+    }
+
+    getAttribute(key) {
+        var matches = this.attributes.filter(function (attr) {
+            return attr.belongTo(key);
+        });
+
+        if (!matches.length) {
+            return null;
+        }
+
+        return matches[0];
     }
 
     setAttribute(key, value) {
@@ -80,6 +91,18 @@ class ElementNode extends VNode {
         attr.compile(this.compileOptions);
         this.attributes.push(attr);
         return attr;
+    }
+
+    observe(key, action) {
+        var matches = this.attributes.filter(function (attr) {
+            return attr.belongTo(key);
+        });
+
+        if (!matches.length) {
+            return;
+        }
+
+        return matches[0].observe(action);
     }
 
     getOuterTpl() {
@@ -142,13 +165,21 @@ class ElementNode extends VNode {
         return result;
     }
 
+    getDirectives() {
+        return this.attributes.map(function (attr) {
+            return attr.getDirective();
+        }).filter(function (dir) {
+            return dir != null;
+        });
+    }
+
     compile(options) {
         this.compileOptions = options;
         this.attributes.forEach(function (attr) {
             attr.compile(options);
         });
         // perform directive according to priority
-        this.attributes = orderBy(this.attributes, function (item) {
+        this.attributes = utils.orderBy(this.attributes, function (item) {
             return item.priority;
         });
         this.isComponent = options.containsComponent(this.nodeName);
@@ -256,7 +287,7 @@ class ElementNode extends VNode {
 
     removeHtmlElement() {
         if (this.htmlElement != null) {
-            eleUtils.removeNode(this.htmlElement);
+            utils.removeNode(this.htmlElement);
         }
     }
 

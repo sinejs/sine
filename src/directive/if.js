@@ -4,7 +4,10 @@ import * as utils from '../utility';
 
 @directive({
     namespace: 'sine',
-    selector: 'n-if'
+    selector: 'n-if',
+    inject: {
+        $animate: '$animate'
+    }
 })
 class IfDirective extends Directive {
     constructor() {
@@ -21,14 +24,20 @@ class IfDirective extends Directive {
     }
 
     onUpdate() {
+        var self = this;
+
         if (this.$binding.compute()) {
             if (this.$htmlElement.parentNode == null) {
-                utils.replaceNode(this.htmlComment, this.$htmlElement);
+                this.$animate.enter(this.$element, function () {
+                    utils.replaceNode(self.htmlComment, self.$htmlElement);
+                });
             }
         }
         else {
             if (this.$htmlElement.parentNode != null) {
-                utils.replaceNode(this.$htmlElement, this.htmlComment);
+                this.$animate.leave(this.$element, function () {
+                    utils.replaceNode(self.$htmlElement, self.htmlComment);
+                });
             }
         }
     }

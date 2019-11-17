@@ -54,4 +54,8 @@ class MessengerBus {
     }
 }
 
-export { Messenger, MessengerBus };
+function isMessenger(obj) {
+    return obj instanceof Messenger;
+}
+
+export { Messenger, MessengerBus, isMessenger };

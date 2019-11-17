@@ -127,8 +127,9 @@ class RepeatDirective extends Directive {
         var self = this;
         var fragment = document.createDocumentFragment();
         var newCmpItems = [];
+        var index = 0;
 
-        utils.forEach(self.dataItems, function (key, item) {
+        utils.forEach(self.dataItems, function (item, key) {
             var cmpItem = self.getCmpItem(item);
 
             if (cmpItem == null) {
@@ -139,8 +140,10 @@ class RepeatDirective extends Directive {
                 cmpItem.$inheritCmp(self.scope);
             }
 
+            cmpItem['$index'] = index;
             fragment.appendChild(cmpItem.$render(true));
             newCmpItems.push(cmpItem);
+            index++;
         });
 
         if (self.cmpItems.length > 0) {

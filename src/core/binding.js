@@ -148,16 +148,17 @@ class Binding {
         }
     }
 
-    onchange(action) {
+    observe(action) {
         if (this.output) {
             return;
         }
 
         this.listen();
+        this.change.on(action);
 
-        if (action != null) {
-            this.change.on(action);
-        }
+        return function () {
+            this.change.off(action);
+        };
     }
 
     detect() {

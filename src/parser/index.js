@@ -73,7 +73,7 @@ function compute(exp, scope, options) {
     if (options.collectMembers) {
         options.members = [];
     }
-    return parseExp(exp).compile(scope, options);
+    return parseExp(exp).compute(scope, options);
 }
 
 function parseExp(exp) {
@@ -110,8 +110,8 @@ function parseAssignment(exp, scope, options) {
     };
 
     return {
-        obj: memberExp.object.compile(scope, options, {}, scope),
-        prop: memberExp.property.compile(scope, options, {}, scope)
+        obj: memberExp.object.compute(scope, options, {}, scope),
+        prop: memberExp.property.compute(scope, options, {}, scope)
     }
 }
 

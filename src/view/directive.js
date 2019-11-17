@@ -89,7 +89,7 @@ export class Directive {
             this.onInsert.call(this);
         }
 
-        if (utils.isFunction(this.onLoad) || utils.isFunction(this.onUnload)) {
+        if (utils.isFunction(this.onEnter) || utils.isFunction(this.onLeave)) {
             this.$requestAnimation();
         }
     }
@@ -109,16 +109,16 @@ export class Directive {
             if (self.$isLoaded()) {
                 if (!self.$elementloaded) {
                     self.$elementloaded = true;
-                    if (self.onLoad != null) {
-                        self.onLoad.call(self);
+                    if (self.onEnter != null) {
+                        self.onEnter.call(self);
                     }
                 }
             }
             else {
                 if (self.$elementloaded) {
                     self.$elementloaded = false;
-                    if (self.onUnload != null) {
-                        self.onUnload.call(self);
+                    if (self.onLeave != null) {
+                        self.onLeave.call(self);
                     }
                 }
             }
@@ -147,6 +147,16 @@ export class Directive {
         if (utils.isFunction(this.onUpdate)) {
             this.onUpdate.call(this);
         }
+    }
+
+    $getAttrValue(attrName) {
+        var attrNode = this.$element.getAttribute(attrName);
+
+        if (attrNode == null) {
+            return '';
+        }
+
+        return attrNode.binding.value;
     }
 
     $dispose(destroyFromAttr) {

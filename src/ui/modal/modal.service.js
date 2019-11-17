@@ -1,6 +1,6 @@
 import { Service } from '../../view/service';
 import { service } from '../../decorator/service';
-import { ModalComponent } from '../component/modal';
+import { ModalComponent } from './modal.cmp';
 
 @service({
     namespace: 'sine.ui',
