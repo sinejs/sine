@@ -1,4 +1,4 @@
-import { Directive } from '../../view/directive';
+import { Directive } from '../../view';
 
 class StateDirective extends Directive {
     constructor(attrName) {

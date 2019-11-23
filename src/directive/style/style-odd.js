@@ -1,5 +1,5 @@
 import { StyleDirective } from './style';
-import { directive } from '../../decorator/directive';
+import { directive } from '../../decorator';
 
 @directive({
     namespace: 'sine',

@@ -1,5 +1,5 @@
 import { StateDirective } from './state';
-import { directive } from '../../decorator/directive';
+import { directive } from '../../decorator';
 
 @directive({
     namespace: 'sine',

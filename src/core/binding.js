@@ -1,5 +1,4 @@
-import { isObject, forEach } from '../utility/utils';
-import { Messenger } from '../utility/message';
+import { Messenger } from '../utility';
 import { compute, parseAssignment } from '../parser';
 
 class ExpNode {

@@ -1,6 +1,6 @@
-import { Directive } from '../../view/directive';
-import { directive } from '../../decorator/directive';
-import { Messenger } from '../../utility/message';
+import { Directive } from '../../view';
+import { directive } from '../../decorator';
+import { Messenger } from '../../utility';
 
 @directive({
     namespace: 'sine',

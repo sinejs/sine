@@ -1,6 +1,6 @@
 import * as utils from '../utility';
-import { Service } from '../view/service';
-import { service } from '../decorator/service';
+import { Service } from '../view';
+import { service } from '../decorator';
 
 var TRANSITION = 'transition';
 var ANIMATION = 'animation';
@@ -34,7 +34,7 @@ class AnimateService extends Service {
 
         var animation = this.resolveAnimationContext(vnode);
 
-        if(!animation) {
+        if (!animation) {
             return doEnter();
         }
 
@@ -216,8 +216,8 @@ class AnimateService extends Service {
     }
 
     whenAnimationEnds(el,
-                      expectedType,
-                      cb) {
+        expectedType,
+        cb) {
         var ref = this.getAnimationInfo(el, expectedType);
         var type = ref.type;
         var timeout = ref.timeout;
@@ -275,13 +275,13 @@ class AnimateService extends Service {
             timeout = Math.max(transitionTimeout, animationTimeout);
             type = timeout > 0
                 ? transitionTimeout > animationTimeout
-                ? TRANSITION
-                : ANIMATION
+                    ? TRANSITION
+                    : ANIMATION
                 : null;
             propCount = type
                 ? type === TRANSITION
-                ? transitionDurations.length
-                : animationDurations.length
+                    ? transitionDurations.length
+                    : animationDurations.length
                 : 0;
         }
         var hasTransform =

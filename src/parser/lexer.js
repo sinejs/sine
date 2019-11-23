@@ -1,4 +1,4 @@
-import * as utils from '../utility/utils';
+import * as utils from '../utility';
 
 var OPERATORS = {};
 var operatorText = '+ - * / % === !== == != < > <= >= && || ! = |';

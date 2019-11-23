@@ -1,5 +1,4 @@
-import { isObject, isArray } from '../utility/utils';
-import { Messenger } from '../utility/message';
+import { isObject, isArray, Messenger } from '../utility';
 
 var propChangingMsg = new Messenger();
 var propChangedMsg = new Messenger();

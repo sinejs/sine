@@ -1,8 +1,7 @@
-import * as utils from '../utility/utils';
-import { Messenger } from '../utility/message';
-import { typeConst, injector } from './injector';
+import * as utils from '../utility';
+import { typeConst, injector, Injector } from './injector';
 import { Component } from './component';
-import { Directive }from './directive';
+import { Directive } from './directive';
 import { Filter } from './filter';
 import { Service } from './service';
 
@@ -129,4 +128,22 @@ function makeConstructor(cls) {
     return f;
 }
 
-export { namespace, injector, component, directive, filter, service, isComponent, isDirective, isFilter, isService, bootstrap };
+export {
+    typeConst,
+    injector,
+    Injector,
+    Component,
+    Directive,
+    Filter,
+    Service,
+    isComponent,
+    isDirective,
+    isFilter,
+    isService,
+    namespace,
+    component,
+    directive,
+    filter,
+    service,
+    bootstrap
+};

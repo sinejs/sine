@@ -1,5 +1,5 @@
-import { Service } from '../view/service';
-import { service } from '../decorator/service';
+import { Service } from '../view';
+import { service } from '../decorator';
 
 @service({
     namespace: 'sine',

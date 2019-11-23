@@ -1,10 +1,8 @@
-import { typeConst, injector } from '../view/injector'
+import { typeConst, injector } from '../view'
 
-function directive(meta) {
+export function directive(meta) {
     return function (target) {
         var selector = meta.selector || target.name;
         injector.registerConstructor(typeConst.directive, selector, target, meta);
     };
 }
-
-export { directive }

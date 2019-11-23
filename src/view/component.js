@@ -1,5 +1,5 @@
 import * as utils from '../utility';
-import { Observer } from '../core/observer';
+import { Observer } from '../core';
 import { compile, compute } from '../parser';
 import { injector } from './injector';
 

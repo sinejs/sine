@@ -1,10 +1,8 @@
-import { typeConst, injector } from '../view/injector'
+import { typeConst, injector } from '../view'
 
-function component(meta) {
+export function component(meta) {
     return function (target) {
         var selector = meta.selector || target.name;
         injector.registerConstructor(typeConst.component, selector, target, meta);
     };
 }
-
-export { component }

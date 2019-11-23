@@ -1,6 +1,6 @@
-import { httpGet } from '../utility/http';
-import { Service } from '../view/service';
-import { service } from '../decorator/service';
+import { httpGet } from '../utility';
+import { Service } from '../view';
+import { service } from '../decorator';
 
 @service({
     namespace: 'sine',

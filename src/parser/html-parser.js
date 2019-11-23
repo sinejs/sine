@@ -1,4 +1,4 @@
-import * as utils from '../utility/utils';
+import * as utils from '../utility';
 import { Parser } from './parser';
 import { DocumentFragmentNode, CommentNode, TextNode, DocumentTypeNode, ElementNode, AttrNode } from '../core';
 

@@ -1,6 +1,6 @@
 {
   "name": "sinejs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "a JavaScript MVVM framework",
   "main": "src/index.js",
   "scripts": {

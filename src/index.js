@@ -1,3 +1,6 @@
+import * as decorator from './decorator';
+
+export { decorator }
 export * from './utility';
 export * from './view';
 export * from './parser';

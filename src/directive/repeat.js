@@ -1,7 +1,6 @@
-import { Directive } from '../view/directive';
-import { directive } from '../decorator/directive';
+import { Directive, Component } from '../view';
+import { directive } from '../decorator';
 import * as utils from '../utility';
-import { Component } from '../view/component';
 
 @directive({
     namespace: 'sine',

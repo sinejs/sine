@@ -1,4 +1,4 @@
-import * as utils from '../utility/utils';
+import * as utils from '../utility';
 import { VNodeType, VNode } from './base';
 import { Binding } from './binding';
 

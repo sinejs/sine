@@ -1,4 +1,4 @@
-import * as utils from '../utility/utils';
+import * as utils from '../utility';
 import { Lexer } from './lexer';
 
 utils.inherit(HtmlLexer, Lexer);
