@@ -281,7 +281,7 @@ function MemberExpressionNode(object, property, computed) {
 }
 
 MemberExpressionNode.prototype.compute = function (scope, options, context) {
-    var obj = this.object.compute(scope, options, context);
+    var obj = this.object.compute(scope, options);
 
     if (obj == null && this.object.allowNull) {
         obj = new NullObject();
@@ -542,10 +542,6 @@ Parser.prototype.primary = function () {
         primary = new LiteralNode(this.options.literals[this.consume().text]);
     } else if (this.peek().identifier) {
         primary = this.identifier();
-        if (this.peek('?')) {
-            primary.allowNull = true;
-            this.consume('?');
-        }
     } else if (this.peek().constant) {
         primary = this.constant();
     } else {
@@ -553,23 +549,21 @@ Parser.prototype.primary = function () {
     }
 
     var next;
-    while ((next = this.expect('(', '[', '.'))) {
+    while (this.peek('(', '[', '.') || (this.peek('?') && this.peekAhead(1, '.'))) {
+        if (this.expect('?')) {
+            primary.allowNull = true;
+        }
+
+        next = this.expect('(', '[', '.');
+
         if (next.text === '(') {
             primary = new CallExpressionNode(primary, this.parseArguments());
             this.consume(')');
         } else if (next.text === '[') {
             primary = new MemberExpressionNode(primary, this.expression(), true);
             this.consume(']');
-            if (this.peek('?')) {
-                primary.allowNull = true;
-                this.consume('?');
-            }
         } else if (next.text === '.') {
             primary = new MemberExpressionNode(primary, this.identifier(), false);
-            if (this.peek('?')) {
-                primary.allowNull = true;
-                this.consume('?');
-            }
         } else {
             this.throwError('IMPOSSIBLE');
         }

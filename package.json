@@ -1,7 +1,7 @@
 {
-  "name": "sine",
-  "version": "0.1.0",
-  "description": "a new mvvm framework for client side",
+  "name": "sinejs",
+  "version": "0.0.1",
+  "description": "a JavaScript MVVM framework",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -29,8 +29,5 @@
     "terser-webpack-plugin": "^2.2.1",
     "webpack": "^4.41.0",
     "webpack-cli": "^3.3.6"
-  },
-  "dependencies": {
-    "axios": "^0.19.0"
   }
 }

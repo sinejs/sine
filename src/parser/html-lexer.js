@@ -56,7 +56,7 @@ HtmlLexer.prototype.readText = function () {
     while (this.index < this.text.length) {
         var ch = this.text.charAt(this.index);
         var ch2 = this.peek();
-        if ((ch === '<' && (this.isIdentifierStart(ch2)) || ch2 === '/') || this.expectString('<!--')) {
+        if ((ch === '<' && (this.isIdentifierStart(ch2) || ch2 === '/')) || this.expectString('<!--')) {
             break;
         }
         string += ch;
