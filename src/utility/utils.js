@@ -383,18 +383,40 @@ function orderByDescending(arr, getter) {
     });
 }
 
-function toNumber (value) {
+function toNumber(value) {
     var n = parseFloat(value);
     return isNaN(n) ? value : n;
 }
 
-function remove (arr, item) {
+function remove(arr, item) {
     if (arr.length) {
         var index = arr.indexOf(item);
         if (index > -1) {
             return arr.splice(index, 1);
         }
     }
+}
+
+function format() {
+    if (arguments.length === 0) {
+        return;
+    }
+
+    var match, matchText, index, text = arguments[0],
+        placeHoder = /\{(\d+)\}/g;
+
+    while (match = placeHoder.exec(text)) {
+        matchText = match[0];
+        index = Number.parseInt(match[1]) + 1;
+
+        if (arguments.length <= index) {
+            throw new Error('format item ' + index + 'is not defined');
+        }
+
+        text = text.substring(0, match.index) + arguments[index] + text.substring(match.index + matchText.length);
+    }
+
+    return text;
 }
 
 export {
@@ -430,5 +452,6 @@ export {
     orderBy,
     orderByDescending,
     toNumber,
-    remove
+    remove,
+    format
 };

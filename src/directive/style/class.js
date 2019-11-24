@@ -59,14 +59,16 @@ class ClassDirective extends Directive {
     }
 
     setClassList(arr) {
+        var self = this;
+
         this.$htmlElement.classList.forEach(function (item) {
-            this.$htmlElement.classList.remove(item);
+            self.$htmlElement.classList.remove(item);
         });
         this.initialClassList.forEach(function (item) {
-            this.$htmlElement.classList.add(item);
+            self.$htmlElement.classList.add(item);
         });
         arr.forEach(function (item) {
-            this.$htmlElement.classList.add(item);
+            self.$htmlElement.classList.add(item);
         });
     }
 
