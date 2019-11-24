@@ -111,7 +111,7 @@ function parseAssignment(exp, scope, options) {
 
     return {
         obj: memberExp.object.compute(scope, options, {}, scope),
-        prop: memberExp.property.compute(scope, options, {}, scope)
+        prop: memberExp.property.compute(scope, options, { propertyKey: true }, scope)
     }
 }
 
