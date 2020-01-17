@@ -11,9 +11,11 @@ import { directive } from '../decorator';
 class ShowDirective extends Directive {
     constructor() {
         super();
+        this.initialDisplay = null;
     }
 
     onInsert() {
+        this.initialDisplay = this.$htmlElement.style.display;
         this.toggle();
     }
 
@@ -26,7 +28,7 @@ class ShowDirective extends Directive {
 
         if (this.$binding.compute()) {
             this.$animate.enter(this.$element, function () {
-                self.$htmlElement.style.display = 'initial';
+                self.$htmlElement.style.display = self.initialDisplay;
             });
         }
         else {

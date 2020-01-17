@@ -4,9 +4,6 @@ import { compile, compute } from '../parser';
 import { injector } from './injector';
 
 export class Component {
-    get $proxy() {
-        return this.toProxy();
-    }
 
     constructor(meta) {
         Component.construct.call(this, meta);
@@ -83,7 +80,7 @@ export class Component {
             this.beforeAttrChange.call(this, prop, value, oldValue);
         }
 
-        utils.setProperty(this.$proxy, prop, value, true);
+        utils.setProperty(this.$, prop, value, true);
 
         if (utils.isFunction(this.afterAttrChange)) {
             this.afterAttrChange.call(this, prop, value, oldValue);
@@ -99,26 +96,19 @@ export class Component {
         throw new Error(e + ' is not a event');
     }
 
-    $getTemplate(sync) {
+    $getTemplateById(id) {
+        var element = document.querySelector('#' + id);
+        return element ? element.innerText : '';
+    }
+
+    $getTemplate() {
         var meta = this.$getMeta();
 
-        if (sync) {
-            return meta.template || '';
+        if (utils.isString(meta.templateId)) {
+            meta.template = this.$getTemplateById(meta.templateId);
         }
 
-        return new Promise(function (resolve) {
-            if (utils.isString(meta.template)) {
-                resolve(meta.template);
-            }
-            else if (utils.isString(meta.templateUrl)) {
-                injector.service('$templateCache').getTplByUrl(meta.templateUrl).then(function (tpl) {
-                    resolve(tpl);
-                });
-            }
-            else {
-                resolve('');
-            }
-        });
+        return meta.template || '';
     }
 
     $using(name) {
@@ -185,40 +175,28 @@ export class Component {
         this.$$childElements = null;
     }
 
-    $render(sync) {
-        var self = this, fragment = null;
+    $render() {
+        var fragment = null;
 
-        if (sync) {
-            if (this.$hasView()) {
-                fragment = this.$showView();
-            }
-            else {
-                fragment = compile(this.$getTemplate(sync), this.$makeCompileOptions())(this);
-            }
-
-            return fragment;
+        if (this.$hasView()) {
+            fragment = this.$showView();
+        }
+        else {
+            fragment = compile(this.$getTemplate(), this.$makeCompileOptions())(this);
         }
 
-        return new Promise(function (resolve) {
-            if (self.$hasView()) {
-                resolve(self.$showView());
-            }
-            else {
-                self.$getTemplate().then(function (html) {
-                    fragment = compile(html, self.$makeCompileOptions())(self);
-                    resolve(fragment);
-                });
-            }
-        });
+        return fragment;
     }
 
-    $refresh(sync) {
+    $refresh() {
         this.$clearView();
-        return this.$render(sync);
+        return this.$render();
     }
 
     $mount(selectorOrElement, options) {
-        var self = this, element, options = options || {};
+        var element;
+
+        options = options || {};
 
         if (utils.isString(selectorOrElement)) {
             element = document.querySelector(selectorOrElement);
@@ -231,16 +209,8 @@ export class Component {
             utils.clearChildNodes(element);
         }
 
-        if (options.sync) {
-            element.appendChild(this.$render(options.sync));
-            self.$afterViewMount();
-        }
-        else {
-            this.$render(options.sync).then(function (ele) {
-                element.appendChild(ele);
-                self.$afterViewMount();
-            });
-        }
+        element.appendChild(this.$render());
+        this.$afterViewMount();
     }
 
     $unmount() {
@@ -281,7 +251,7 @@ export class Component {
     }
 
     $validate() {
-        var obj, prop, action, self = this;
+        var obj, prop, action;
 
         if (arguments.length === 2) {
             obj = this;
@@ -301,7 +271,7 @@ export class Component {
     }
 
     $watch() {
-        var obj, prop, action, self = this;
+        var obj, prop, action;
 
         if (arguments.length === 2) {
             obj = this;

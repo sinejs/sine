@@ -11,9 +11,11 @@ import { directive } from '../decorator';
 class HideDirective extends Directive {
     constructor() {
         super();
+        this.initialDisplay = null;
     }
 
     onInsert() {
+        this.initialDisplay = this.$htmlElement.style.display;
         this.toggle();
     }
 
@@ -31,7 +33,7 @@ class HideDirective extends Directive {
         }
         else {
             this.$animate.enter(this.$element, function () {
-                self.$htmlElement.style.display = 'initial';
+                self.$htmlElement.style.display = self.initialDisplay;
             });
         }
     }

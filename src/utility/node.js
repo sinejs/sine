@@ -1,3 +1,4 @@
+import { isNumber } from './utils';
 
 function getChildNodes(node) {
     return Array.prototype.slice.call(node.childNodes, 0);
@@ -46,87 +47,6 @@ function insertNodeAfter(refNode, newNode) {
     } else {
         parentNode.insertBefore(newNode, refNode.nextSibling);
     }
-}
-
-function queryElementLoaded(ele, callback) {
-    var cancelToken = false;
-
-    function query() {
-        if (cancelToken) {
-            return;
-        }
-
-        if (ele.clientWidth > 0 && ele.clientHeight > 0) {
-            callback();
-        }
-        else {
-            requestAnimationFrame(query);
-        }
-    }
-
-    requestAnimationFrame(query);
-
-    return function () {
-        cancelToken = true;
-    };
-}
-
-function queryElementUnloaded(ele, callback) {
-    var cancelToken = false;
-
-    function query() {
-        if (cancelToken) {
-            return;
-        }
-
-        if (ele.clientWidth === 0 && ele.clientHeight == 0) {
-            callback();
-        }
-        else {
-            requestAnimationFrame(query);
-        }
-    }
-
-    requestAnimationFrame(query);
-
-    return function () {
-        cancelToken = true;
-    };
-}
-
-function queryElementState(ele, callbacks) {
-    var cancelToken = false, loaded = false;
-
-    function query() {
-        if (cancelToken) {
-            return;
-        }
-
-        if (ele.clientWidth > 0 && ele.clientHeight > 0) {
-            if (!loaded) {
-                loaded = true;
-                if (callbacks.onEnter != null) {
-                    callbacks.onEnter.call(callbacks);
-                }
-            }
-        }
-        else {
-            if (loaded) {
-                loaded = false;
-                if (callbacks.onLeave != null) {
-                    callbacks.onLeave.call(callbacks);
-                }
-            }
-        }
-
-        requestAnimationFrame(query);
-    }
-
-    requestAnimationFrame(query);
-
-    return function () {
-        cancelToken = true;
-    };
 }
 
 function addClass (el, cls) {
@@ -188,9 +108,6 @@ export {
     removeNode,
     removeNodeBetween,
     insertNodeAfter,
-    queryElementLoaded,
-    queryElementUnloaded,
-    queryElementState,
     addClass,
     removeClass
 };

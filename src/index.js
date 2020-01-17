@@ -7,3 +7,4 @@ export * from './parser';
 export * from './service';
 export * from './directive';
 export * from './animation';
+export * from './sample';

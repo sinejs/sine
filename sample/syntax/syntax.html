@@ -18,3 +18,24 @@
 
 <!--using component, pass arguments using data binding-->
 <note :content="value"></note>
+
+<!--<div *n-show="true" *test-animation style="overflow: hidden;">-->
+    <!--<div style="width: 100px;height:100px;background-color: red;" *n-show="true" *test2-animation></div>-->
+<!--</div>-->
+
+<!--<div style="position:relative;">-->
+    <!--<button class="red" *n-show="on" *animation @click="$.on=!on" style="position: absolute">on</button>-->
+    <!--<button class="red" *n-hide="on" *animation @click="$.on=!on" style="position: absolute">off</button>-->
+<!--</div>-->
+
+<!--<ul>-->
+    <!--<li style="transition:transform 1s;">1</li>-->
+    <!--<li style="transition:transform 1s;">2</li>-->
+    <!--<li style="transition:transform 1s;">3</li>-->
+    <!--<li style="transition:transform 1s;">4</li>-->
+    <!--<li style="transition:transform 1s;">5</li>-->
+    <!--<li style="transition:transform 1s;">6</li>-->
+<!--</ul>-->
+
+<button @click="changeView()">Change</button>
+<div *n-view="view" *test2-animation></div>

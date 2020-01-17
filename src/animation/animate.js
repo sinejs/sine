@@ -1,14 +1,9 @@
 import * as utils from '../utility';
 import { Service } from '../view';
 import { service } from '../decorator';
-
-var TRANSITION = 'transition';
-var ANIMATION = 'animation';
-var transitionProp = 'transition';
-var transitionEndEvent = 'transitionend';
-var animationProp = 'animation';
-var animationEndEvent = 'animationend';
-var transformRE = /\b(transform|all)(,|$)/;
+import { AnimateEnter } from './animate-enter';
+import { AnimateLeave } from './animate-leave';
+import * as animateUtils  from './animate-utils';
 
 @service({
     namespace: 'sine',
@@ -17,10 +12,54 @@ var transformRE = /\b(transform|all)(,|$)/;
 class AnimateService extends Service {
     constructor() {
         super();
+        this.activeAnimation = [];
+        this.animationQueue = [];
+        this.delayedAnimation = [];
+        this.$$main();
     }
 
-    enter(vnode, doEnter) {
-        var el = vnode.htmlElement;
+    $$main() {
+        var self = this;
+
+        animateUtils.raf(function () {
+            while(self.delayedAnimation.length > 0) {
+                self.animationQueue.push(self.delayedAnimation.shift());
+            }
+
+            while (self.animationQueue.length > 0) {
+                var animation = self.animationQueue.shift();
+
+                if (animation.destroyed) {
+                    continue;
+                }
+
+                if (animateUtils.isInPage(animation.element)) {
+                    var cancelled = animation.execute();
+                    if (!cancelled) {
+                        self.activeAnimation.push(animation);
+                        animation.animationEnding.on(function () {
+                            utils.remove(self.activeAnimation, this);
+                        });
+                    }
+                }
+                else {
+                    self.delayedAnimation.push(animation);
+                }
+            }
+        });
+    }
+
+    // by default, animation is disable while there is parent element animating
+    disableAnimate(el) {
+        return this.animationQueue.some(function (item) {
+                return item.isLive() && item.element.contains(el) && !item.context.animateChildren;
+            }) || this.activeAnimation.some(function (item) {
+                return item.isLive() && item.element.contains(el) && !item.context.animateChildren;
+            });
+    }
+
+    enter(vnode, doEnter, appear) {
+        var self = this, el = vnode.htmlElement;
 
         // call leave callback now
         if (utils.isFunction(el._leaveCb)) {
@@ -32,61 +71,56 @@ class AnimateService extends Service {
             return;
         }
 
-        var animation = this.resolveAnimationContext(vnode);
+        var context = this.resolveAnimationContext(vnode);
 
-        if (!animation) {
+        if (!context || (appear && !context.animateAppear)) {
             return doEnter();
         }
 
-        var data = this.resolveAnimation(animation);
+        var data = this.resolveAnimation(context);
+        var animation = new AnimateEnter(el, context);
 
-        var self = this;
-        var type = data.type;
-        var enterClass = data.enterClass;
-        var enterToClass = data.enterToClass;
-        var enterActiveClass = data.enterActiveClass;
-        var duration = data.duration;
+        animation.doEnter = doEnter;
+        animation.type = data.type;
+        animation.duration = data.duration;
+        animation.enterClass = data.enterClass;
+        animation.enterToClass = data.enterToClass;
+        animation.enterActiveClass = data.enterActiveClass;
 
-        var explicitEnterDuration = utils.toNumber(
-            utils.isObject(duration)
-                ? duration.enter
-                : duration
-        );
+        if (context.delayEnter) {
+            context.delayEnter(performEnter);
+        }
+        else {
+            performEnter();
+        }
 
-        var cb = el._enterCb = self.once(function () {
-            self.removeAnimationClass(el, enterToClass);
-            self.removeAnimationClass(el, enterActiveClass);
-            if (cb.cancelled) {
-                self.removeAnimationClass(el, enterClass);
-                animation.enterCancelled && animation.enterCancelled(el);
-            } else {
-                animation.afterEnter && animation.afterEnter(el);
+        function performEnter() {
+            if (self.disableAnimate(el)) {
+                return doEnter();
             }
-            el._enterCb = null;
-        });
 
-        // start enter animation
-        animation.beforeEnter && animation.beforeEnter(el);
-        self.addAnimationClass(el, enterClass);
-        self.addAnimationClass(el, enterActiveClass);
-        self.nextFrame(function () {
-            self.removeAnimationClass(el, enterClass);
-            if (!cb.cancelled) {
-                self.addAnimationClass(el, enterToClass);
-                if (self.isValidDuration(explicitEnterDuration)) {
-                    setTimeout(cb, explicitEnterDuration);
-                } else {
-                    self.whenAnimationEnds(el, type, cb);
-                }
-            }
-        });
+            animation._beforeEnterCb = animateUtils.once(function () {
+                animateUtils.removeAnimationClass(el, animation.enterClass);
+                context.enterCancelled && context.enterCancelled(el);
+                animation._beforeEnterCb = null;
+            });
 
-        doEnter();
-        animation.enter && animation.enter(el, cb);
+            context.beforeEnter && context.beforeEnter(el);
+            animateUtils.addAnimationClass(el, animation.enterClass);
+            doEnter();
+
+            self.animationQueue.push(animation);
+
+            context.animationDestroyed.on(function () {
+                animation.destroy();
+            });
+        }
+
+        return animation;
     }
 
     leave(vnode, doLeave) {
-        var el = vnode.htmlElement;
+        var self = this, el = vnode.htmlElement;
 
         // call enter callback now
         if (utils.isFunction(el._enterCb)) {
@@ -94,9 +128,9 @@ class AnimateService extends Service {
             el._enterCb();
         }
 
-        var animation = this.resolveAnimationContext(vnode);
+        var context = this.resolveAnimationContext(vnode);
 
-        if (!animation || el.nodeType !== 1) {
+        if (!context || el.nodeType !== 1) {
             return doLeave();
         }
 
@@ -104,61 +138,45 @@ class AnimateService extends Service {
             return;
         }
 
-        var data = this.resolveAnimation(animation);
+        var data = this.resolveAnimation(context);
+        var animation = new AnimateLeave(el, context);
 
-        var self = this;
-        var type = data.type;
-        var leaveClass = data.leaveClass;
-        var leaveToClass = data.leaveToClass;
-        var leaveActiveClass = data.leaveActiveClass;
-        var duration = data.duration;
+        animation.doLeave = doLeave;
+        animation.type = data.type;
+        animation.duration = data.duration;
+        animation.leaveClass = data.leaveClass;
+        animation.leaveToClass = data.leaveToClass;
+        animation.leaveActiveClass = data.leaveActiveClass;
 
-        var explicitLeaveDuration = utils.toNumber(
-            utils.isObject(duration)
-                ? duration.leave
-                : duration
-        );
-
-        var cb = el._leaveCb = self.once(function () {
-            self.removeAnimationClass(el, leaveToClass);
-            self.removeAnimationClass(el, leaveActiveClass);
-            if (cb.cancelled) {
-                self.removeAnimationClass(el, leaveClass);
-                animation.leaveCancelled && animation.leaveCancelled(el);
-            } else {
-                doLeave();
-                animation.afterLeave && animation.afterLeave(el);
-            }
-            el._leaveCb = null;
-        });
-
-        if (animation.delayLeave) {
-            animation.delayLeave(performLeave);
-        } else {
+        if (context.delayLeave) {
+            context.delayLeave(performLeave);
+        }
+        else {
             performLeave();
         }
 
         function performLeave() {
-            // the delayed leave may have already been cancelled
-            if (cb.cancelled) {
-                return;
+            if(self.disableAnimate(el)) {
+                return doLeave();
             }
-            animation.beforeLeave && animation.beforeLeave(el);
-            self.addAnimationClass(el, leaveClass);
-            self.addAnimationClass(el, leaveActiveClass);
-            self.nextFrame(function () {
-                self.removeAnimationClass(el, leaveClass);
-                if (!cb.cancelled) {
-                    self.addAnimationClass(el, leaveToClass);
-                    if (self.isValidDuration(explicitLeaveDuration)) {
-                        setTimeout(cb, explicitLeaveDuration);
-                    } else {
-                        self.whenAnimationEnds(el, type, cb);
-                    }
-                }
+
+            animation._beforeLeaveCb = animateUtils.once(function () {
+                animateUtils.removeAnimationClass(el, animation.leaveClass);
+                context.leaveCancelled && context.leaveCancelled(el);
+                animation._beforeLeaveCb = null;
             });
-            animation.leave && animation.leave(el, cb);
+
+            context.beforeLeave && context.beforeLeave(el);
+            animateUtils.addAnimationClass(el, animation.leaveClass);
+
+            self.animationQueue.push(animation);
+
+            context.animationDestroyed.on(function () {
+                animation.destroy();
+            });
         }
+
+        return animation;
     }
 
     resolveAnimation(config) {
@@ -175,6 +193,9 @@ class AnimateService extends Service {
 
     autoCssAnimation(name) {
         return {
+            appearClass: (name + "-appear"),
+            appearToClass: (name + "-appear-to"),
+            appearActiveClass: (name + "-appear-active"),
             enterClass: (name + "-enter"),
             enterToClass: (name + "-enter-to"),
             enterActiveClass: (name + "-enter-active"),
@@ -184,140 +205,9 @@ class AnimateService extends Service {
         };
     }
 
-    once(fn) {
-        var called = false;
-        return function () {
-            if (!called) {
-                called = true;
-                fn.apply(this, arguments);
-            }
-        }
-    }
-
-    nextFrame(fn) {
-        requestAnimationFrame(function () {
-            requestAnimationFrame(fn);
-        });
-    }
-
-    addAnimationClass(el, cls) {
-        var animationClasses = el._animationClasses || (el._animationClasses = []);
-        if (animationClasses.indexOf(cls) < 0) {
-            animationClasses.push(cls);
-            utils.addClass(el, cls);
-        }
-    }
-
-    removeAnimationClass(el, cls) {
-        if (el._animationClasses) {
-            utils.remove(el._animationClasses, cls);
-        }
-        utils.removeClass(el, cls);
-    }
-
-    whenAnimationEnds(el,
-        expectedType,
-        cb) {
-        var ref = this.getAnimationInfo(el, expectedType);
-        var type = ref.type;
-        var timeout = ref.timeout;
-        var propCount = ref.propCount;
-        if (!type) {
-            return cb();
-        }
-        var event = type === TRANSITION ? transitionEndEvent : animationEndEvent;
-        var ended = 0;
-        var end = function () {
-            el.removeEventListener(event, onEnd);
-            cb();
-        };
-        var onEnd = function (e) {
-            if (e.target === el) {
-                if (++ended >= propCount) {
-                    end();
-                }
-            }
-        };
-        setTimeout(function () {
-            if (ended < propCount) {
-                end();
-            }
-        }, timeout + 1);
-        el.addEventListener(event, onEnd);
-    }
-
-    getAnimationInfo(el, expectedType) {
-        var styles = window.getComputedStyle(el);
-        var transitionDelays = styles[transitionProp + 'Delay'].split(', ');
-        var transitionDurations = styles[transitionProp + 'Duration'].split(', ');
-        var transitionTimeout = this.getTimeout(transitionDelays, transitionDurations);
-        var animationDelays = styles[animationProp + 'Delay'].split(', ');
-        var animationDurations = styles[animationProp + 'Duration'].split(', ');
-        var animationTimeout = this.getTimeout(animationDelays, animationDurations);
-
-        var type;
-        var timeout = 0;
-        var propCount = 0;
-        /* istanbul ignore if */
-        if (expectedType === TRANSITION) {
-            if (transitionTimeout > 0) {
-                type = TRANSITION;
-                timeout = transitionTimeout;
-                propCount = transitionDurations.length;
-            }
-        } else if (expectedType === ANIMATION) {
-            if (animationTimeout > 0) {
-                type = ANIMATION;
-                timeout = animationTimeout;
-                propCount = animationDurations.length;
-            }
-        } else {
-            timeout = Math.max(transitionTimeout, animationTimeout);
-            type = timeout > 0
-                ? transitionTimeout > animationTimeout
-                    ? TRANSITION
-                    : ANIMATION
-                : null;
-            propCount = type
-                ? type === TRANSITION
-                    ? transitionDurations.length
-                    : animationDurations.length
-                : 0;
-        }
-        var hasTransform =
-            type === TRANSITION &&
-            transformRE.test(styles[transitionProp + 'Property']);
-        return {
-            type: type,
-            timeout: timeout,
-            propCount: propCount,
-            hasTransform: hasTransform
-        };
-    }
-
-    getTimeout(delays, durations) {
-        var self = this;
-
-        while (delays.length < durations.length) {
-            delays = delays.concat(delays);
-        }
-
-        return Math.max.apply(null, durations.map(function (d, i) {
-            return self.toMs(d) + self.toMs(delays[i]);
-        }));
-    }
-
-    toMs(s) {
-        return Number(s.slice(0, -1)) * 1000;
-    }
-
-    isValidDuration(value) {
-        return typeof value === 'number' && !isNaN(value);
-    }
-
     resolveAnimationContext(element) {
         var animations = element.getDirectives().filter(function (dir) {
-            return dir.animation = true;
+            return dir.animation;
         });
 
         if (animations.length) {

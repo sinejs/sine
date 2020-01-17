@@ -37,7 +37,7 @@
                     zIndex: this.nextZIndex()
                 };
 
-                notes.toProxy().push(newNote);
+                notes.$.push(newNote);
 
                 return newNote;
             },
@@ -66,11 +66,11 @@
                 var index = this.notes.indexOf(note);
 
                 if (index !== -1) {
-                    this.notes.toProxy().splice(index, 1);
+                    this.notes.$.splice(index, 1);
                 }
             },
             toggleEdit: function () {
-                this.toProxy().isEditing = !this.isEditing;
+                this.$.isEditing = !this.isEditing;
             }
         }
     });
@@ -86,7 +86,7 @@
         });
 
         hammerTime.on('panmove', function (ev) {
-            var pos = scope.model.position.toProxy();
+            var pos = scope.model.position.$;
             pos.x = x + ev.deltaX;
             pos.y = y + ev.deltaY;
         });
@@ -103,7 +103,7 @@
         });
 
         hammerTime.on('panmove', function(ev) {
-            var size = scope.model.size.toProxy();
+            var size = scope.model.size.$;
             size.width = x + ev.deltaX;
             size.height = y + ev.deltaY;
         });
@@ -121,7 +121,7 @@
         methods: {
             onMouseDown: function () {
                 if (!this.noteService.isMaxZIndex(this.model.zIndex)) {
-                    this.model.toProxy().zIndex = this.noteService.nextZIndex();
+                    this.model.$.zIndex = this.noteService.nextZIndex();
                 }
             },
             onInit: function () {

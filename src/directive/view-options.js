@@ -3,9 +3,9 @@ import { directive } from "../decorator";
 
 @directive({
     namespace: 'sine',
-    selector: 'n-bind-cmp-options'
+    selector: 'n-view-options'
 })
-class BindCmpOptionsDirective extends Directive {
+class ViewOptionsDirective extends Directive {
     constructor() {
         super();
         this.value = null;

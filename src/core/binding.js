@@ -112,7 +112,7 @@ class Binding {
         var assignment = parseAssignment(this.text, this.scope);
 
         if (assignment.obj != null && assignment.prop != null) {
-            assignment.obj.toProxy()[assignment.prop] = value;
+            assignment.obj.$[assignment.prop] = value;
         }
     }
 

@@ -140,7 +140,7 @@ class RepeatDirective extends Directive {
             }
 
             cmpItem['$index'] = index;
-            fragment.appendChild(cmpItem.$render(true));
+            fragment.appendChild(cmpItem.$render());
             newCmpItems.push(cmpItem);
             index++;
         });

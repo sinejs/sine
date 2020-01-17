@@ -144,13 +144,13 @@ class ModelDirective extends Directive {
             return;
         }
 
-        var scope = this.$binding.scope.toProxy();
+        var scope = this.$binding.scope;
 
         if (scope[name] == null) {
-            scope[name] = {};
+            scope.$[name] = {};
         }
 
-        var state = scope[name].toProxy();
+        var state = scope[name].$;
 
         state.$pristine = this.$pristine;
         state.$dirty = this.$dirty;

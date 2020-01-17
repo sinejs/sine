@@ -6,9 +6,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Syntax</title>
+    <style type="text/css">
+        .red.n-enter{
+            transform: translateX(20px);
+        }
+
+        .red.n-enter-active{
+            transition: transform ease 1s;
+        }
+
+        .red.n-enter-to{
+            transform: translateX(0px);
+        }
+
+        .red.n-leave{
+            transform: translateX(0px);
+        }
+
+        .red.n-leave-active{
+            transition: transform ease 1s;
+        }
+
+        .red.n-leave-to{
+            transform: translateX(0px);
+        }
+    </style>
 </head>
 
 <body>
+<script type="text/x-template" id="syntax">
+    <!--data binding-->
+    <input type="text" :value="value">
+
+    <!--event binding-->
+    <input type="text" :value="value" @change="onchange()">
+
+    <!--event binding, pass arguments-->
+    <input type="text" :value="value" @change="onchange($event)">
+
+    <!--two-way binding with directive-->
+    <input type="text" *n-model="value">
+
+    <!--using directive-->
+    <div *n-bind="value"></div>
+
+    <!--using component, pass arguments-->
+    <note content="value"></note>
+
+    <!--using component, pass arguments using data binding-->
+    <note :content="value"></note>
+
+    <div class="card">
+        <div class="card-body" *n-show="showCard" *test-animation>
+            <h5 class="card-title">title</h5>
+            <p class="card-text">test</p>
+        </div>
+    </div>
+
+    <button @click="$.showCard=!showCard">toggle</button>
+
+    <!--<div *n-show="true" *test-animation style="overflow: hidden;">-->
+    <!--<div style="width: 100px;height:100px;background-color: red;" *n-show="true" *test2-animation></div>-->
+    <!--</div>-->
+
+    <!--<div style="position:relative;">-->
+    <!--<button class="red" *n-show="on" *animation @click="$.on=!on" style="position: absolute">on</button>-->
+    <!--<button class="red" *n-hide="on" *animation @click="$.on=!on" style="position: absolute">off</button>-->
+    <!--</div>-->
+
+    <!--<ul>-->
+    <!--<li style="transition:transform 1s;">1</li>-->
+    <!--<li style="transition:transform 1s;">2</li>-->
+    <!--<li style="transition:transform 1s;">3</li>-->
+    <!--<li style="transition:transform 1s;">4</li>-->
+    <!--<li style="transition:transform 1s;">5</li>-->
+    <!--<li style="transition:transform 1s;">6</li>-->
+    <!--</ul>-->
+
+    <button @click="changeView()">Change</button>
+    <div *n-view="view" *test2-animation></div>
+</script>
+
+
 <div id="app"><app></app></div>
 <script src="../lib/axios.js"></script>
 <script src="../../dist/sine.js"></script>

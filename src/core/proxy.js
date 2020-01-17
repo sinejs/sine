@@ -1,5 +1,9 @@
 import { SetPropertyHandler } from './handler';
 
-Object.prototype.toProxy = function () {
-    return new Proxy(this, new SetPropertyHandler());
-};
+Object.defineProperty(Object.prototype, '$', {
+    get: function () {
+        return new Proxy(this, new SetPropertyHandler());
+    },
+    configurable: false,
+    enumerable: false
+});

@@ -16,9 +16,35 @@
     });
 
     sine.namespace(syntaxApp).component('app', {
-        templateUrl: './syntax.html',
+        templateId: 'syntax',
         construct: function () {
             this.value = 'text holder';
+            this.on = true;
+            this.view = 'cmp1';
+        },
+        methods: {
+            changeView: function () {
+                if(this.view === 'cmp1'){
+                    this.$.view = 'cmp2';
+                }
+                else{
+                    this.$.view = 'cmp1';
+                }
+            }
+        }
+    });
+
+    sine.namespace(syntaxApp).component('cmp1', {
+        template: '<div>this is cmp 1</div><div>this is cmp 1</div><div>this is cmp 1</div><div>this is cmp 1</div><div>this is cmp 1</div>',
+        construct: function () {
+
+        }
+    });
+
+    sine.namespace(syntaxApp).component('cmp2', {
+        template: '<div>this is cmp 2</div><div>this is cmp 2</div><div>this is cmp 2</div><div>this is cmp 2</div><div>this is cmp 2</div>',
+        construct: function () {
+
         }
     });
 

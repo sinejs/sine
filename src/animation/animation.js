@@ -1,5 +1,6 @@
 import { Directive } from '../view';
 import { directive } from '../decorator';
+import { Messenger } from '../utility';
 
 @directive({
     namespace: 'sine',
@@ -20,12 +21,19 @@ class Animation extends Directive {
         // this.leaveToClass = '';
         // this.leaveActiveClass = '';
         this.$priority = -100;
+        this.animateAppear = false;
+        this.animateChildren = false;
+        this.animationDestroyed = new Messenger();
     }
 
     nextFrame(fn) {
         requestAnimationFrame(function () {
             requestAnimationFrame(fn);
         });
+    }
+
+    onDestroy() {
+        this.animationDestroyed.fire();
     }
 
     // beforeEnter() {

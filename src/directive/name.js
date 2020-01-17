@@ -19,13 +19,13 @@ class NameDirective extends Directive {
             return;
         }
 
-        var proxy = this.$scope.toProxy();
+        var scope = this.$scope;
 
         if (this.$component != null) {
-            proxy[this.name] = this.$component;
+            scope.$[this.name] = this.$component;
         }
         else {
-            proxy[this.name] = this.$element;
+            scope.$[this.name] = this.$element;
         }
     }
 
@@ -36,7 +36,6 @@ class NameDirective extends Directive {
     }
 
     setCmp(cmp) {
-        var proxy = this.$scope.toProxy();
-        proxy[this.name] = cmp;
+        this.$scope.$[this.name] = cmp;
     }
 }
